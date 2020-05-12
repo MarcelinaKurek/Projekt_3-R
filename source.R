@@ -14,3 +14,5 @@ september <- data.table(read_csv("201909-citibike-tripdata.csv.zip"))
 october <- data.table(read_csv("201910-citibike-tripdata.csv.zip"))
 november <- data.table(read_csv("201911-citibike-tripdata.csv.zip"))
 december <- data.table(read_csv("201912-citibike-tripdata.csv.zip"))
+
+#Komentarz
