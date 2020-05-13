@@ -22,14 +22,14 @@ months <- list(january, february, march, april, may, june, july, august, septemb
 stations <- data.table(january[, c("end station id", "end station name", "end station latitude", "end station longitude")])
 stations <- rbind(stations, january[, c("start station id", "start station name", 
                                         "start station latitude", "start station longitude")], 
-                                        use.names=FALSE)
+                  use.names=FALSE)
 for(i in 2:12) {
   stations <- rbind(stations, months[[i]][,c("end station id", "end station name", 
-                                                         "end station latitude", "end station longitude")], 
-                                                          use.names = FALSE)
+                                             "end station latitude", "end station longitude")], 
+                    use.names = FALSE)
   stations <- rbind(stations, months[[i]][,c("start station id", "start station name", 
-                                                         "start station latitude", "start station longitude")],
-                                                          use.names = FALSE)
+                                             "start station latitude", "start station longitude")],
+                    use.names = FALSE)
 }
 oldnames <- c("end station id", "end station name", 
               "end station latitude", "end station longitude")
@@ -48,5 +48,6 @@ for(i in 2:12) {
 end_stations_indices_grouped <- end_stations_indices[, .N ,by="end station id"]
 end_stations_indices_drop_na <- end_stations_indices_grouped[!is.na(end_stations_indices_grouped$`end station id`),]
 end_stations_indices_sorted_byN <- end_stations_indices_drop_na[order(N, decreasing = TRUE)] 
+
 
 
