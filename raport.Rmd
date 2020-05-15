@@ -8,13 +8,17 @@ runtime: shiny
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+
+library(data.table)
+library(readr)
+library(ggplot2)
 ```
-```{r include=FALSE}
-source("source.R")
-```
-Rozmieszcenie stacji w Nowym Yorku
 ```{r, include=FALSE}
-ggplot(busy_stations, aes(x=longitude, y=latitude, size=N, color=N)) + 
+busyStations <- data.table(read_csv("busy_stations.csv"))
+```
+Zagęszczenie ruchu na stacjach w Nowym Yorku
+```{r, include=TRUE}
+ggplot(busyStations, aes(x=longitude, y=latitude, size=N, color=N)) + 
   geom_point(alpha=0.2) +
   scale_size(range=c(.1, 10)) +
   scale_color_gradient(low="blue", high="red")
