@@ -15,16 +15,27 @@ library(ggplot2)
 ```
 ```{r, include=FALSE}
 busyStations <- data.table(read_csv("busy_stations.csv"))
+endStations <- data.table(read_csv("end_stations.csv"))
+Routes <- data.table(read_csv("routes_to_plot.csv"))
 ```
-Zagęszczenie ruchu na stacjach w Nowym Yorku
-```{r, include=TRUE}
+Najbardziej oblegane stacje w Nowym Yorku
+```{r, include=TRUE, cache=TRUE}
 ggplot(busyStations, aes(x=longitude, y=latitude, size=N, color=N)) + 
   geom_point(alpha=0.2) +
   scale_size(range=c(.1, 10)) +
   scale_color_gradient(low="blue", high="red")
 ```
-
-
-
-
+Najczęstsze stacje docelowe
+```{r, include=TRUE, cache=TRUE}
+ggplot(endStations, aes(x=longitude, y=latitude, size=N, color=N)) + 
+  geom_point(alpha=0.2) +
+  scale_size(range=c(.1, 10)) +
+  scale_color_gradient(low="blue", high="red")
+```
+100 najbardziej uczęszczanych tras
+```{r, include=TRUE}
+ggplot(Routes, aes(x=`start longitude`, y=`start latitude`, group=id)) +
+  geom_point(size=2, color="blue") +
+  geom_line(color="red")
+```
 

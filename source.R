@@ -35,7 +35,7 @@ december <- december[sample(nrow(december), 10000), ]
 ## lista z bazami danych
 months <- list(january, february, march, april, may, june, july, august, september, october, november, december)
 
-## baza stacji
+## ---- baza stacji ----
 raw_stations <- data.table(january[, c("end station id", "end station name", "end station latitude", "end station longitude")])
 raw_stations <- rbind(raw_stations, january[, c("start station id", "start station name", 
                                         "start station latitude", "start station longitude")], 
@@ -69,6 +69,7 @@ busy_stations <- busy_stations[order(N, decreasing = TRUE)]
 fwrite(busy_stations, file="busy_stations.csv")
 
 ## ---- najbardziej oblegane stacje patrząc po end station ----
+
 end_stations_indices <- data.table(january[,"end station id"])
 for(i in 2:12) {
   end_stations_indices <- rbind(end_stations_indices, months[[i]]$`end station id`, use.names = FALSE)
@@ -83,4 +84,33 @@ setkey(end_stations_indices_sorted_byN, `end station id`)
 end_stations <- merge.data.table(end_stations_indices_sorted_byN,stations,
                                  by.x = key(end_stations_indices_sorted_byN) , by.y = key(stations),all.x = TRUE)
 
+fwrite(end_stations, file="end_stations.csv")
 
+
+## ---- najczęściej wybierana trasa ----
+
+routes <- data.table(january)
+routes <- routes[, .N , by = list(`start station id`, `end station id`)]
+for(i in 2:12) {
+  temporary <- months[[i]][, .N , by = list(`start station id`, `end station id`)]
+  temporary$`start station id` <- as.double(temporary$`start station id`)
+  temporary$`end station id` <- as.double(temporary$`end station id`)
+  routes <- merge.data.table(routes, temporary, all = TRUE)
+}
+stations$id <- as.double(stations$id)
+
+# szerokość i dł. geog. stacji początkowej
+routes <- merge.data.table(routes, stations, by.x = "start station id", by.y = "id", all.x = TRUE, all.y = FALSE)
+oldnames <- c("latitude", "longitude")
+newnames <- c("start latitude", "start longitude")
+setnames(routes, old = oldnames, new=newnames, skip_absent = TRUE)
+
+# szerokość i dł. geog. stacji końcowej
+routes <- merge.data.table(routes, stations, by.x = "end station id", by.y = "id", all.x = TRUE, all.y = FALSE)
+newnames <- c("end latitude", "end longitude")
+setnames(routes, old = oldnames, new=newnames, skip_absent = TRUE)
+
+routes <- routes[order(N, decreasing = TRUE)]
+routes_to_plot <- routes[1:100 ,c("start latitude", "start longitude", "id")]
+routes_to_plot <- rbind(routes_to_plot, routes[1:100 ,c("end latitude", "end longitude", "id")], use.names = FALSE)
+fwrite(routes_to_plot, "routes_to_plot.csv")
