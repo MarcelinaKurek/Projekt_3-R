@@ -1,4 +1,8 @@
-
+## wczytanie danych
+library(readr)
+library(data.table)
+library(dplyr)
+library(ggplot2)
 
 ## baza stacji
 raw_stations <- data.table(january[, c("end station id", "end station name", "end station latitude", "end station longitude")])
