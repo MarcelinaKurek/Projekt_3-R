@@ -114,3 +114,35 @@ routes <- routes[order(N, decreasing = TRUE)]
 routes_to_plot <- routes[1:100 ,c("start latitude", "start longitude", "id")]
 routes_to_plot <- rbind(routes_to_plot, routes[1:100 ,c("end latitude", "end longitude", "id")], use.names = FALSE)
 fwrite(routes_to_plot, "routes_to_plot.csv")
+
+## ---- obserwacje ruchu na podstawie godzin( w których godzinach są krótkie trasy a w których długie) ----
+hours_observations <- data.table(january[,c("starttime", "tripduration")])
+for (i in 2:12) {
+  hours_observations <- rbind(months[[i]][,c("starttime", "tripduration")])
+}
+hours_observations <- cbind(hours_observations, hour = hour(hours_observations$starttime), `duration in minutes` = hours_observations$tripduration / 60)
+#pogrupowane po godzinach
+hours_grouped <- hours_observations[, .N , by="hour"]
+fwrite(hours_grouped, "hours_grouped.csv")
+
+# czas trwania podróży przedziały  0 - 15 min, 15 min - 30 min, 30 min - 45 min, ponad 45 min (prawdopodonie przejażdżka)
+duration_0_15min <- hours_observations[`duration in minutes` > 0 & `duration in minutes` <= 15, 'hour']
+duration_15_30min <- hours_observations[`duration in minutes` > 15 & `duration in minutes` <= 30, 'hour']
+duration_30_45min <- hours_observations[`duration in minutes` > 30 & `duration in minutes` <= 45, 'hour']
+duration_over_45min <- hours_observations[`duration in minutes` > 45, 'hour']
+
+# grupujemy każdą z tabel żeby zobaczyć w jakich godzinach najczęściej występuje dany czas podróży
+duration_0_15min_grouped <- duration_0_15min[, .N, by = 'hour']
+duration_0_15min_grouped <- duration_0_15min_grouped[order(N, decreasing = TRUE)]
+
+duration_15_30min_grouped <- duration_15_30min[, .N, by = 'hour']
+duration_15_30min_grouped <- duration_15_30min_grouped[order(N, decreasing = TRUE)]
+
+
+duration_30_45min_grouped <- duration_30_45min[, .N, by = 'hour']
+duration_30_45min_grouped <- duration_30_45min_grouped[order(N, decreasing = TRUE)]
+
+
+duration_over_45min_grouped <- duration_over_45min[, .N, by = 'hour']
+duration_over_45min_grouped <- duration_over_45min_grouped[order(N, decreasing = TRUE)]
+
