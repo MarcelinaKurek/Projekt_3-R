@@ -2,6 +2,7 @@
 .Rhistory
 .RData
 .Ruserdata
+.RDataTmp
 201901-citibike-tripdata.csv.zip
 201902-citibike-tripdata.csv.zip
 201903-citibike-tripdata.csv.zip
