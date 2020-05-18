@@ -185,12 +185,7 @@ dane_do_wykresu <- najdluzszych_1procent[, .("rok urodzenia" =`birth year`, `lic
 dane_do_wykresu <- dane_do_wykresu[`liczba osób` < 1000, ] #jeden rok zaciemnia wykres
 
 
-ggplot(data=dane_do_wykresu, aes(x=`rok urodzenia`, y=`liczba osób`, fill = as.factor(gender))) +
-  geom_bar(stat="identity")+
-  geom_text(aes(y=0, label=10), vjust=1.6, 
-            color="white", size=3.5)+
-  scale_fill_brewer(palette = "Dark2", name = "Płeć", labels = c("Brak danych", "Mężczyzna", "Kobieta") )+
-  ggtitle("Użytkownicy rowerów miejskich, którzy wypożyczają rowery na najdłuższy okres czasu")
+
 
 
 ### --porówanie ruchu w poszczególnych miesiącach-- 
