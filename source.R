@@ -3,6 +3,7 @@ library(readr)
 library(data.table)
 library(dplyr)
 library(ggplot2)
+library(RColorBrewer)
 
 january <- data.table(read_csv("201901-citibike-tripdata.csv.zip"))
 february <- data.table(read_csv("201902-citibike-tripdata.csv.zip"))
@@ -31,6 +32,21 @@ september <- september[sample(nrow(september), 10000), ]
 october <- october[sample(nrow(october), 10000), ]
 november <- november[sample(nrow(november), 10000), ]
 december <- december[sample(nrow(december), 10000), ]
+
+## Dodanie kolumny z nazwą miesiąca
+january <- january[, month := "january"]
+february <- february[, month := "february"]
+march<- march[, month := "march"]
+april<- april[, month := "april"]
+may<- may[, month := "may"]
+june <- june[, month := "june"]
+july<- july[, month := "july"]
+august <- august[, month := "august"]
+september<- september[, month := "september"]
+october <- october[, month := "october"]
+november <- november[, month := "november"]
+december <- december[, month := "december"]
+
 
 ## lista z bazami danych
 months <- list(january, february, march, april, may, june, july, august, september, october, november, december)
@@ -145,4 +161,49 @@ duration_30_45min_grouped <- duration_30_45min_grouped[order(N, decreasing = TRU
 
 duration_over_45min_grouped <- duration_over_45min[, .N, by = 'hour']
 duration_over_45min_grouped <- duration_over_45min_grouped[order(N, decreasing = TRUE)]
+
+
+## ---- Najdłużssze wypożyczenia ----
+# funkcja do wyboru najdłuższych wypożyczeń z poszczególnych miesięcy
+najdluzsze_podroze <- function(miesiac, ile = 6, min_czas_trwania = 0){
+  x <- miesiac[tripduration >= min_czas_trwania,][order(tripduration, decreasing = TRUE)]
+  ifelse(nrow(x) > ile, head(x, ile), x)
+}
+
+## wybór 1% najdłuższych wypożyczeń spośród wszystkich miesięcy
+wszystko_razem <-  function(x,y) merge.data.table(x,y,all=TRUE) 
+najdluzsze_wypozyczenia <- Reduce(wszystko_razem, months)[order(tripduration, decreasing = TRUE)]
+najdluzszych_1procent <- head(najdluzsze_wypozyczenia, 4050)
+fwrite(najdluzszych_1procent, "najdluzszych_1procent.csv")
+
+
+#kod generujący wykres przedziału wiekowego oraz płci "najlepszych" użytkowników
+dane_do_wykresu <- najdluzszych_1procent[, .("rok urodzenia" =`birth year`, `liczba osób` = .N), by = list(`birth year`, gender)]
+dane_do_wykresu <- dane_do_wykresu[`liczba osób` < 1000, ] #jeden rok zaciemnia wykres
+
+
+ggplot(data=dane_do_wykresu, aes(x=`rok urodzenia`, y=`liczba osób`, fill = as.factor(gender))) +
+  geom_bar(stat="identity")+
+  geom_text(aes(y=0, label=10), vjust=1.6, 
+            color="white", size=3.5)+
+  scale_fill_brewer(palette = "Dark2", name = "Płeć", labels = c("Brak danych", "Mężczyzna", "Kobieta") )+
+  ggtitle("Użytkownicy rowerów miejskich, którzy wypożyczają rowery na najdłuższy okres czasu")
+
+
+### --porówanie ruchu w poszczególnych miesiącach-- 
+ruch <- lapply(months,  FUN = nrow)
+which.max(ruch)
+
+
+# kod generujący wykres ruchu w ciągu roku
+ruch <- unlist(ruch)
+names(ruch) = c("JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC")
+palette(brewer.pal(11, "Spectral"))
+barplot(ruch, las = 1, col = c(5, 6, 7 ,5, 4, 3, 2, 1, 11, 10, 9, 8), ylim = c(0, 50000), at = NULL)
+ticks<-c(0, 10000,20000,30000,40000, 50000)
+axis(2,at=ticks,labels=c("0", "10.000", "20.000", "30.000", "40.000", "50.000"), las = 1)
+axis(1, at = seq(0.6, 14, length.out = 12), labels = names(ruch))
+title("Liczba wypożyczonych rowerów w ciągu roku")
+
+
 
