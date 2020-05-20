@@ -182,12 +182,21 @@ wypozyczenia <- wszystko[`birth year` > 1950, .(`birth year`, gender)]
 dane_do_wykresu <- wypozyczenia[, .("rok urodzenia" =`birth year`, `liczba osób` = .N), by = list(`birth year`, gender)]
 fwrite(dane_do_wykresu, "Wiek i płeć użytkownikóW.csv")
 
+
 ggplot(data=dane_do_wykresu, aes(x=`rok urodzenia`, y=`liczba osób`, fill = as.factor(gender))) +
   geom_bar(stat="identity")+
   geom_text(aes(y=0, label=10), vjust=1.6, 
             color="white", size=3.5)+
   scale_fill_brewer(palette = "Dark2", name = "Płeć", labels = c("Brak danych", "Mężczyzna", "Kobieta") )+
   ggtitle("Chrarakterystyka użytkowników")
+
+  
+  
+  
+  ### --porówanie ruchu w poszczególnych miesiącach-- 
+ruch <- lapply(months,  FUN = nrow)
+which.max(ruch)
+
 
 
 # kod generujący wykres ruchu w ciągu roku
@@ -200,5 +209,7 @@ ticks<-c(0, 10000,20000,30000,40000, 50000)
 axis(2,at=ticks,labels=c("0", "10.000", "20.000", "30.000", "40.000", "50.000"), las = 1)
 axis(1, at = seq(0.6, 14, length.out = 12), labels = names(ruch))
 title("Liczba wypożyczonych rowerów w ciągu roku")
+
+
 
 
