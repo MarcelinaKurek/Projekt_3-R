@@ -3,7 +3,7 @@ library(shinythemes)
 
 ui <- fluidPage(
   includeCSS("styles.css"),
-  navbarPage("Analiza danych NYC Bike Share", theme = shinytheme("united"), header=tags$head(includeCSS("styles.css")) ,
+  navbarPage("Analiza danych NYC Bike Share", theme = shinytheme("cosmo"), header=tags$head(includeCSS("styles.css")) ,
              tabPanel("Najczęstsze trasy",
                       sidebarLayout(
                         sidebarPanel(
@@ -15,7 +15,29 @@ ui <- fluidPage(
                           plotOutput("favorite_routes")
                         )
                       )
-             )
+             ),
+             tabPanel("Kto więcej wypożycza?",
+                      sidebarLayout(
+                        sidebarPanel(
+                         p("Zauważamy, że znacznie częściej z rowerów korzystają osoby z roczną subskrypcją.")
+                        ),
+                        mainPanel(
+                          plotOutput("sub_vs_cust")
+                        ),
+                        
+                      )
+             ),
+             tabPanel("Długość podróży",
+                      sidebarLayout(
+                        sidebarPanel(
+                          radioButtons(inputId = "btns", label = "Wybierz długość podróży",
+                                       choices = c("bardzo krótka - 0 - 15 min", "krótka - 15 - 30 min",
+                                                   "średnia - 30 - 45 min", "długa - ponad 45 min"))
+                        ),
+                        mainPanel(
+                          plotOutput("dlPodrozy")
+                        )
+                      ))
   )
   
 )
@@ -41,6 +63,22 @@ server <- function(input, output) {
     ggplot(routes_to_plot2, aes(x=`start longitude`, y=`start latitude`, group=ID)) +
       geom_point(size=2, color="black") +
       geom_line(color="red")
+  })
+  
+  output$sub_vs_cust <- renderPlot({
+    df <- read_csv(file = "sub_vs_customers.csv")
+    ggplot(data=df, aes(x = usertype, y=N, fill=as.factor(N))) +
+      geom_bar(stat="identity") +
+      scale_fill_manual(values=c("purple", "orange")) +
+      theme(legend.position = "none") +
+      xlab("Typ użytkownika") +
+      ggtitle("Liczba wypożyczeń z uwagi na typ użytkownika w skali roku")
+  
+  })
+  
+  output$dlPodrozy <- renderPlot({
+    tripDuration <- read_csv("tripduration_over_hours.csv")
+    ggplot(tripDuration, aes(x=1:24))
   })
 }
 

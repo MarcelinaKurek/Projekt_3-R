@@ -52,7 +52,13 @@ december <- december[, month := "december"]
 
 ## lista z bazami danych
 months <- list(january, february, march, april, may, june, july, august, september, october, november, december)
-
+whole_data <- data.table(NULL)
+for(i in 1:12) {
+  whole_data <- rbind(whole_data, months[[i]])
+}
+## ---- subskrybenci do zwykłych ----
+by_usertype <- whole_data[,.N, b=usertype]
+fwrite(by_usertype, "sub_vs_customers.csv")
 ## ---- baza stacji ----
 raw_stations <- data.table(january[, c("end station id", "end station name", "end station latitude", "end station longitude")])
 raw_stations <- rbind(raw_stations, january[, c("start station id", "start station name", 
@@ -133,8 +139,8 @@ setnames(routes, old = oldnames, new=newnames, skip_absent = TRUE)
 fwrite(routes[, c("N" ,"start latitude", "start longitude", "end latitude", "end longitude", "month")], "routes_to_plot.csv")
 
 ## ---- obserwacje ruchu na podstawie godzin( w których godzinach są krótkie trasy a w których długie) ----
-hours_observations <- data.table(january[,c("starttime", "tripduration")])
-for (i in 2:12) {
+hours_observations <- data.table(june[,c("starttime", "tripduration")])
+for (i in 7:9) {
   hours_observations <- rbind(months[[i]][,c("starttime", "tripduration")])
 }
 hours_observations <- cbind(hours_observations, hour = hour(hours_observations$starttime), `duration in minutes` = hours_observations$tripduration / 60)
@@ -173,18 +179,17 @@ group_trips <- group_trips[order(starttime),list(`starttime`,`start station id`,
 result_tab <- data.table(NULL)
 len <- dim(group_trips)[1]
 howmany <- 2
-for (i in 1:len) {
+for (i in 1:len-1) {
   iter <- 1
+  loop <- 1
   for (j in i+1:len) {
-    span <- interval(as.POSIXct(group_trips$starttime[i]), as.POSIXct(group_trips$starttime[j]))
-    span <- as.period(span)
-    minutes <- stri_extract_all_regex(span, "^[0-9]*M{1}")
-    minutes <- as.numeric(stri_extract_all_regex(minutes, "[0-9]+"))
-    if (is.na(minutes)) minutes <- 0
-    
-    if (minutes < 5 ) {
-      if (group_trips$`start station id`[i] == group_trips$`start station id`[j] & 
-          group_trips$`end station id`[i] == group_trips$`end station id`[j]) {
+    if (group_trips$`start station id`[i] == group_trips$`start station id`[j] && group_trips$`end station id`[i] == group_trips$`end station id`[j]){
+      span <- interval(as.POSIXct(group_trips$starttime[i]), as.POSIXct(group_trips$starttime[j]))
+      span <- as.period(span)
+      minutes <- stri_extract_all_regex(span, "^[0-9]*M{1}")
+      minutes <- as.numeric(stri_extract_all_regex(minutes, "[0-9]+"))
+      if (is.na(minutes)) minutes <- 0
+      if (minutes < 5 ) {
         if (iter == 1) {
           row <- cbind(group_trips[i], howmany)
           result_tab <- rbind(result_tab, row)
@@ -193,11 +198,14 @@ for (i in 1:len) {
           result_tab[dim(result_tab)[1]] <- result_tab[dim(result_tab)[1]] + 1
         }
         iter <- iter + 1
-        
+      }
+      else if(minutes >= 5){
+        break;
       }
     }
-    else {
-      break
+    
+    if (j - i >= 20) {
+      break;
     }
   }
 }
