@@ -30,9 +30,9 @@ ui <- fluidPage(
              tabPanel("Długość podróży",
                       sidebarLayout(
                         sidebarPanel(
-                          radioButtons(inputId = "btns", label = "Wybierz długość podróży",
-                                       choices = c("bardzo krótka - 0 - 15 min", "krótka - 15 - 30 min",
-                                                   "średnia - 30 - 45 min", "długa - ponad 45 min"))
+                          checkboxGroupInput(inputId = "btns", label = "Wybierz długość podróży",
+                                       choices = c("bardzo krótka - 0 - 15 min"=1, "krótka - 15 - 30 min" = 2,
+                                                   "średnia - 30 - 45 min"=3, "długa - ponad 45 min"=4))
                         ),
                         mainPanel(
                           plotOutput("dlPodrozy")
@@ -77,8 +77,47 @@ server <- function(input, output) {
   })
   
   output$dlPodrozy <- renderPlot({
-    tripDuration <- read_csv("tripduration_over_hours.csv")
-    ggplot(tripDuration, aes(x=1:24))
+    trips_hours <- read_csv("tripduration_over_hours.csv")
+    dt <- data.table(NULL)
+    print(input$btns[1])
+      for (i in 1: length(input$btns)) {
+        for (j in 1:4) {
+          if (input$btns[i] == j) {
+            if (j == 1) {
+              data <- data.table(hour=c(1:24),trips_hours[,"0-15min.N"])
+              setnames(data, new="N", old = "0-15min.N")
+              data <- data[,`długość podróży`:="1. bardzo krótka"]
+              dt <- rbind(dt,data)
+            }
+            else if (j == 2) {
+              data <- data.table(hour=c(1:24),trips_hours[,"15-30min.N"])
+              setnames(data, new="N", old = "15-30min.N")
+              data <- data[,`długość podróży`:="2. krótka"]
+              dt <- rbind(dt, data, use.names=FALSE )
+            }
+            else if (j == 3) {
+              data <- data.table(hour=c(1:24),trips_hours[,"30-45min.N"])
+              setnames(data, new="N", old = "30-45min.N")
+              data <- data[,`długość podróży`:="3. średnia"]
+              dt <- rbind(dt, data, use.names=FALSE )
+            }
+            else {
+              data <- data.table(hour=c(1:24),trips_hours[,"over 45min.N"])
+              setnames(data, new="N", old = "over 45min.N")
+              data <- data[,`długość podróży`:="4. długa"]
+              dt <- rbind(dt, data, use.names=FALSE )
+            }
+          }
+        }
+      }
+    
+    if (dim(dt) != 0) {
+      ggplot(data=dt,aes(x=hour, y = `długość podróży`, color = `długość podróży`, size=N)) +
+        geom_point(alpha=0.5) +
+        scale_size( name="Liczba wypożyczeń (N)")
+    }
+    
+    
   })
 }
 

@@ -158,19 +158,19 @@ duration_over_45min <- hours_observations[`duration in minutes` > 45, 'hour']
 
 # very short
 duration_0_15min_grouped <- duration_0_15min[, .N, by = 'hour']
-duration_0_15min_grouped <- duration_0_15min_grouped[order(N, decreasing = TRUE)]
+duration_0_15min_grouped <- duration_0_15min_grouped[order(hour, decreasing = FALSE)]
 #short
 duration_15_30min_grouped <- duration_15_30min[, .N, by = 'hour']
-duration_15_30min_grouped <- duration_15_30min_grouped[order(N, decreasing = TRUE)]
+duration_15_30min_grouped <- duration_15_30min_grouped[order(hour, decreasing = FALSE)]
 #average
 duration_30_45min_grouped <- duration_30_45min[, .N, by = 'hour']
-duration_30_45min_grouped <- duration_30_45min_grouped[order(N, decreasing = TRUE)]
+duration_30_45min_grouped <- duration_30_45min_grouped[order(hour, decreasing = FALSE)]
 #long
 duration_over_45min_grouped <- duration_over_45min[, .N, by = 'hour']
-duration_over_45min_grouped <- duration_over_45min_grouped[order(N, decreasing = TRUE)]
+duration_over_45min_grouped <- duration_over_45min_grouped[order(hour, decreasing = FALSE)]
 
-tripduration_over_hours <- data.table(`0-15min` = duration_0_15min_grouped[1:4], `15-30min` = duration_15_30min_grouped[1:4],
-                                      `30-45min` = duration_30_45min_grouped[1:4], `over 45min`=duration_over_45min_grouped[1:4])
+tripduration_over_hours <- data.table(hour = c(1:24), `0-15min` = duration_0_15min_grouped, `15-30min` = duration_15_30min_grouped,
+                                      `30-45min` = duration_30_45min_grouped, `over 45min`=duration_over_45min_grouped)
 fwrite(tripduration_over_hours, file = "tripduration_over_hours.csv")
 
 ## ---- Sprawdzenie czy ludzie jeżdżą w parach ----
