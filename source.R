@@ -94,10 +94,10 @@ busy_stations <- busy_stations[order(N, decreasing = TRUE)]
 fwrite(busy_stations, file="busy_stations.csv")
 
 ## ---- najbardziej oblegane stacje patrząc po end station ----
-
-end_stations_indices <- data.table(january[,"end station id"])
-for(i in 2:12) {
-  end_stations_indices <- rbind(end_stations_indices, months[[i]]$`end station id`, use.names = FALSE)
+# rano 7 - 10 ----
+end_stations_indices <- data.table(june[hour(starttime) >= 6 & hour(starttime) <= 10,"end station id"])
+for(i in 7:9) {
+  end_stations_indices <- rbind(end_stations_indices, months[[i]][hour(starttime) >= 6 & hour(starttime) <= 10,"end station id"], use.names = FALSE)
 }
 
 end_stations_indices_grouped <- end_stations_indices[, .N ,by="end station id"]
@@ -109,7 +109,24 @@ setkey(end_stations_indices_sorted_byN, `end station id`)
 end_stations <- merge.data.table(end_stations_indices_sorted_byN,stations,
                                  by.x = key(end_stations_indices_sorted_byN) , by.y = key(stations),all.x = TRUE)
 
-fwrite(end_stations, file="end_stations.csv")
+fwrite(end_stations, file="end_stations_morning.csv")
+
+#wieczorem 16 - 19 ----
+end_stations_indices <- data.table(june[hour(starttime) >= 16 & hour(starttime) <= 19,"end station id"])
+for(i in 7:9) {
+  end_stations_indices <- rbind(end_stations_indices, months[[i]][hour(starttime) >= 16 & hour(starttime) <= 19,"end station id"], use.names = FALSE)
+}
+
+end_stations_indices_grouped <- end_stations_indices[, .N ,by="end station id"]
+end_stations_indices_drop_na <- end_stations_indices_grouped[!is.na(end_stations_indices_grouped$`end station id`) 
+                                                             & end_stations_indices_grouped$`end station id` != "NULL",]
+end_stations_indices_sorted_byN <- end_stations_indices_drop_na[order(N, decreasing = TRUE)] 
+setkey(stations, id)
+setkey(end_stations_indices_sorted_byN, `end station id`)
+end_stations <- merge.data.table(end_stations_indices_sorted_byN,stations,
+                                 by.x = key(end_stations_indices_sorted_byN) , by.y = key(stations),all.x = TRUE)
+
+fwrite(end_stations, file="end_stations_evening.csv")
 
 
 ## ---- najczęściej wybierana trasa ----

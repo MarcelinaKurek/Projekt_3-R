@@ -32,10 +32,20 @@ ui <- fluidPage(
                         sidebarPanel(
                           checkboxGroupInput(inputId = "btns", label = "Wybierz długość podróży",
                                        choices = c("bardzo krótka - 0 - 15 min"=1, "krótka - 15 - 30 min" = 2,
-                                                   "średnia - 30 - 45 min"=3, "długa - ponad 45 min"=4))
+                                                   "średnia - 30 - 45 min"=3, "długa - ponad 45 min"=4), selected = c(1,2,3,4))
                         ),
                         mainPanel(
                           plotOutput("dlPodrozy")
+                        )
+                      )),
+             tabPanel("Zagęszczenie ruchu na stacjach",
+                      sidebarLayout(
+                        sidebarPanel(
+                        ),
+                        mainPanel(
+                          plotOutput("stacje"),
+                          plotOutput("rano"),
+                          plotOutput("wieczor")
                         )
                       ))
   )
@@ -117,6 +127,37 @@ server <- function(input, output) {
         scale_size( name="Liczba wypożyczeń (N)")
     }
     
+    
+  })
+  
+  output$stacje <- renderPlot({
+    busyStations <- read_csv("busy_stations.csv")
+    ggplot(busyStations, aes(x=longitude, y=latitude, color=N)) + 
+      geom_point(alpha=0.3, size = 4) + 
+      scale_size(range=c(.1, 10)) +
+      scale_color_gradient(low = "pink", high = "purple") +
+      ggtitle("Zagęszczenie ruchu na stacjach") + 
+      theme(legend.title = element_text("Liczba wypożyczonych rowerów na stacji"))
+  })
+  
+  output$rano <- renderPlot({
+    morning <- read_csv("end_stations_morning.csv")
+    ggplot(morning, aes(x=longitude, y=latitude, color=N)) + 
+      geom_point(alpha=0.4, size = 4) + 
+      scale_size(range=c(.1, 10)) +
+      scale_color_gradient(low="orange", high="blue") +
+      ggtitle("Stacje docelowe rano (7 - 10)") +
+      theme(legend.title = element_text("Liczba zwrotów rowerów na stacji"))
+    
+  })
+  output$wieczor <- renderPlot({
+    evening <- read_csv("end_stations_evening.csv")
+    ggplot(evening, aes(x=longitude, y=latitude, color=N)) + 
+      geom_point(alpha=0.3, size = 4) + 
+      scale_size(range=c(.1, 10)) +
+      scale_color_gradient(low="orange", high="blue") +
+      ggtitle("Stacje docelowe wieczorem (16 - 19)") +
+      theme(legend.title = element_text("Liczba zwrotów rowerów na stacji"))
     
   })
 }
