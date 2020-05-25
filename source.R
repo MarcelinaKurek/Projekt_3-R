@@ -4,6 +4,8 @@ library(data.table)
 library(dplyr)
 library(ggplot2)
 library(RColorBrewer)
+library(lubridate)
+library(stringi)
 
 january <- data.table(read_csv("201901-citibike-tripdata.csv.zip"))
 february <- data.table(read_csv("201902-citibike-tripdata.csv.zip"))
@@ -50,7 +52,13 @@ december <- december[, month := "december"]
 
 ## lista z bazami danych
 months <- list(january, february, march, april, may, june, july, august, september, october, november, december)
-
+whole_data <- data.table(NULL)
+for(i in 1:12) {
+  whole_data <- rbind(whole_data, months[[i]])
+}
+## ---- subskrybenci do zwykłych ----
+by_usertype <- whole_data[,.N, b=usertype]
+fwrite(by_usertype, "sub_vs_customers.csv")
 ## ---- baza stacji ----
 raw_stations <- data.table(january[, c("end station id", "end station name", "end station latitude", "end station longitude")])
 raw_stations <- rbind(raw_stations, january[, c("start station id", "start station name", 
@@ -107,11 +115,13 @@ fwrite(end_stations, file="end_stations.csv")
 
 routes <- data.table(january)
 routes <- routes[, .N , by = list(`start station id`, `end station id`)]
+routes <- routes[, month:= 1]
 for(i in 2:12) {
   temporary <- months[[i]][, .N , by = list(`start station id`, `end station id`)]
   temporary$`start station id` <- as.double(temporary$`start station id`)
-  temporary$`end station id` <- as.double(temporary$`end station id`)
-  routes <- merge.data.table(routes, temporary, all = TRUE)
+  temporary$`end station id` <- as.double(temporary$`end station id`) 
+  temporary <- temporary[, month := i]
+  routes <- rbind(routes, temporary, use.names=FALSE)
 }
 stations$id <- as.double(stations$id)
 
@@ -126,14 +136,11 @@ routes <- merge.data.table(routes, stations, by.x = "end station id", by.y = "id
 newnames <- c("end latitude", "end longitude")
 setnames(routes, old = oldnames, new=newnames, skip_absent = TRUE)
 
-routes <- routes[order(N, decreasing = TRUE)]
-routes_to_plot <- routes[1:100 ,c("start latitude", "start longitude", "id")]
-routes_to_plot <- rbind(routes_to_plot, routes[1:100 ,c("end latitude", "end longitude", "id")], use.names = FALSE)
-fwrite(routes_to_plot, "routes_to_plot.csv")
+fwrite(routes[, c("N" ,"start latitude", "start longitude", "end latitude", "end longitude", "month")], "routes_to_plot.csv")
 
 ## ---- obserwacje ruchu na podstawie godzin( w których godzinach są krótkie trasy a w których długie) ----
-hours_observations <- data.table(january[,c("starttime", "tripduration")])
-for (i in 2:12) {
+hours_observations <- data.table(june[,c("starttime", "tripduration")])
+for (i in 7:9) {
   hours_observations <- rbind(months[[i]][,c("starttime", "tripduration")])
 }
 hours_observations <- cbind(hours_observations, hour = hour(hours_observations$starttime), `duration in minutes` = hours_observations$tripduration / 60)
@@ -151,20 +158,58 @@ duration_over_45min <- hours_observations[`duration in minutes` > 45, 'hour']
 
 # very short
 duration_0_15min_grouped <- duration_0_15min[, .N, by = 'hour']
-duration_0_15min_grouped <- duration_0_15min_grouped[order(N, decreasing = TRUE)]
+duration_0_15min_grouped <- duration_0_15min_grouped[order(hour, decreasing = FALSE)]
 #short
 duration_15_30min_grouped <- duration_15_30min[, .N, by = 'hour']
-duration_15_30min_grouped <- duration_15_30min_grouped[order(N, decreasing = TRUE)]
+duration_15_30min_grouped <- duration_15_30min_grouped[order(hour, decreasing = FALSE)]
 #average
 duration_30_45min_grouped <- duration_30_45min[, .N, by = 'hour']
-duration_30_45min_grouped <- duration_30_45min_grouped[order(N, decreasing = TRUE)]
+duration_30_45min_grouped <- duration_30_45min_grouped[order(hour, decreasing = FALSE)]
 #long
 duration_over_45min_grouped <- duration_over_45min[, .N, by = 'hour']
-duration_over_45min_grouped <- duration_over_45min_grouped[order(N, decreasing = TRUE)]
+duration_over_45min_grouped <- duration_over_45min_grouped[order(hour, decreasing = FALSE)]
 
-tripduration_over_hours <- data.table(`0-15min` = duration_0_15min_grouped[1:4], `15-30min` = duration_15_30min_grouped[1:4],
-                                      `30-45min` = duration_30_45min_grouped[1:4], `over 45min`=duration_over_45min_grouped[1:4])
+tripduration_over_hours <- data.table(hour = c(1:24), `0-15min` = duration_0_15min_grouped, `15-30min` = duration_15_30min_grouped,
+                                      `30-45min` = duration_30_45min_grouped, `over 45min`=duration_over_45min_grouped)
 fwrite(tripduration_over_hours, file = "tripduration_over_hours.csv")
+
+## ---- Sprawdzenie czy ludzie jeżdżą w parach ----
+group_trips <-data.table(read_csv("201906-citibike-tripdata.csv.zip"))
+group_trips <- group_trips[order(starttime),list(`starttime`,`start station id`, `end station id`)]
+result_tab <- data.table(NULL)
+len <- dim(group_trips)[1]
+howmany <- 2
+for (i in 1:len-1) {
+  iter <- 1
+  loop <- 1
+  for (j in i+1:len) {
+    if (group_trips$`start station id`[i] == group_trips$`start station id`[j] && group_trips$`end station id`[i] == group_trips$`end station id`[j]){
+      span <- interval(as.POSIXct(group_trips$starttime[i]), as.POSIXct(group_trips$starttime[j]))
+      span <- as.period(span)
+      minutes <- stri_extract_all_regex(span, "^[0-9]*M{1}")
+      minutes <- as.numeric(stri_extract_all_regex(minutes, "[0-9]+"))
+      if (is.na(minutes)) minutes <- 0
+      if (minutes < 5 ) {
+        if (iter == 1) {
+          row <- cbind(group_trips[i], howmany)
+          result_tab <- rbind(result_tab, row)
+        }
+        else {
+          result_tab[dim(result_tab)[1]] <- result_tab[dim(result_tab)[1]] + 1
+        }
+        iter <- iter + 1
+      }
+      else if(minutes >= 5){
+        break;
+      }
+    }
+    
+    if (j - i >= 20) {
+      break;
+    }
+  }
+}
+
 
 ## ---- Najdłużssze wypożyczenia ----
 # funkcja do wyboru najdłuższych wypożyczeń z poszczególnych miesięcy
