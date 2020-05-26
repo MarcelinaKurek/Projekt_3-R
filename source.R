@@ -201,13 +201,10 @@ for (i in 1:len-1) {
   iter <- 1
   loop <- 1
   for (j in i+1:len) {
-    if (group_trips$`start station id`[i] == group_trips$`start station id`[j] && group_trips$`end station id`[i] == group_trips$`end station id`[j]){
-      span <- interval(as.POSIXct(group_trips$starttime[i]), as.POSIXct(group_trips$starttime[j]))
-      span <- as.period(span)
-      minutes <- stri_extract_all_regex(span, "^[0-9]*M{1}")
-      minutes <- as.numeric(stri_extract_all_regex(minutes, "[0-9]+"))
-      if (is.na(minutes)) minutes <- 0
-      if (minutes < 5 ) {
+    minutes <- difftime(group_trips$starttime[j], group_trips$starttime[i], units = "min")
+    print(minutes)
+    if (minutes < 5) {
+      if (group_trips$`start station id`[i] == group_trips$`start station id`[j] && group_trips$`end station id`[i] == group_trips$`end station id`[j]){
         if (iter == 1) {
           row <- cbind(group_trips[i], howmany)
           result_tab <- rbind(result_tab, row)
@@ -217,16 +214,13 @@ for (i in 1:len-1) {
         }
         iter <- iter + 1
       }
-      else if(minutes >= 5){
+    }
+    else if(minutes >= 5){
         break;
       }
     }
-    
-    if (j - i >= 20) {
-      break;
-    }
   }
-}
+
 
 
 ## ---- Najdłużssze wypożyczenia ----
