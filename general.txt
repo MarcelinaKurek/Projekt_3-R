@@ -1,0 +1,2 @@
+wypozyczenia,rowery,stacje
+10000,18801,917

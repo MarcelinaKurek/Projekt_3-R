@@ -146,7 +146,7 @@ server <- function(input, output) {
       geom_point(alpha=0.4, size = 4) + 
       scale_size(range=c(.1, 10)) +
       scale_color_gradient(low="orange", high="blue") +
-      ggtitle("Stacje docelowe rano (7 - 10)") +
+      ggtitle("Stacje docelowe rano (7 - 10, pon - pt)") +
       theme(legend.title = element_text("Liczba zwrotów rowerów na stacji"))
     
   })
@@ -156,7 +156,7 @@ server <- function(input, output) {
       geom_point(alpha=0.3, size = 4) + 
       scale_size(range=c(.1, 10)) +
       scale_color_gradient(low="orange", high="blue") +
-      ggtitle("Stacje docelowe wieczorem (16 - 19)") +
+      ggtitle("Stacje docelowe wieczorem (16 - 19, pon - pt)") +
       theme(legend.title = element_text("Liczba zwrotów rowerów na stacji"))
     
   })

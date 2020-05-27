@@ -5,7 +5,6 @@ library(dplyr)
 library(ggplot2)
 library(RColorBrewer)
 library(lubridate)
-library(stringi)
 
 
 january <- data.table(read_csv("201901-citibike-tripdata.csv.zip"))
@@ -50,13 +49,22 @@ october <- october[, month := "october"]
 november <- november[, month := "november"]
 december <- december[, month := "december"]
 
-
 ## lista z bazami danych
 months <- list(january, february, march, april, may, june, july, august, september, october, november, december)
-whole_data <- data.table(NULL)
-for(i in 1:12) {
-  whole_data <- rbind(whole_data, months[[i]])
+## Dodanie kolumny z dniem tygodnia
+for (i in 1:12) {
+  months[[i]] <- months[[i]][, Weekday:= weekdays(starttime)]
 }
+## Wszystkie miesiące
+whole_data <- data.table(january)
+for(i in 2:12) {
+  whole_data <- rbind(whole_data, months[[i]], use.names = FALSE)
+}
+wszystkie_wypozyczenia <- dim(whole_data)[1]
+## ---- ile wszystkich rowerów ----
+bikes <- whole_data[, "bikeid"]
+bikes <- unique(bikes, by = "bikeid")
+ile_rowerów <- dim(bikes)[1]
 ## ---- subskrybenci do zwykłych ----
 by_usertype <- whole_data[,.N, b=usertype]
 fwrite(by_usertype, "sub_vs_customers.csv")
@@ -82,7 +90,10 @@ setnames(raw_stations,old = oldnames, new = newnames, skip_absent = TRUE)
 stations <- copy(raw_stations)
 stations <- unique(stations, by = "id")
 stations <- stations[!is.na(stations$id) & id != "NULL",]
+ile_stacji <- dim(stations)[1]
 
+general_info <- data.frame(wypozyczenia = wszystkie_wypozyczenia, rowery = ile_rowerów, stacje = ile_stacji )
+fwrite(general_info, "general.txt")
 ## ---- najbardziej oblegane stacje ogólnie ----
 
 busy_stations <- copy(raw_stations)
@@ -93,11 +104,12 @@ busy_stations <- busy_stations[order(N, decreasing = TRUE)]
 
 fwrite(busy_stations, file="busy_stations.csv")
 
-## ---- najbardziej oblegane stacje patrząc po end station ----
+## ---- najbardziej oblegane stacje patrząc po end station od pon do piatku ----
 # rano 7 - 10 ----
-end_stations_indices <- data.table(june[hour(starttime) >= 6 & hour(starttime) <= 10,"end station id"])
+days <- c("poniedziałek", "wtorek", "środa", "czwartek", "piątek")
+end_stations_indices <- data.table(june[Weekday %in% days & hour(starttime) >= 7 & hour(starttime) <= 10,"end station id"])
 for(i in 7:9) {
-  end_stations_indices <- rbind(end_stations_indices, months[[i]][hour(starttime) >= 6 & hour(starttime) <= 10,"end station id"], use.names = FALSE)
+  end_stations_indices <- rbind(end_stations_indices, months[[i]][Weekday %in% days & hour(starttime) >= 7 & hour(starttime) <= 10,"end station id"], use.names = FALSE)
 }
 
 end_stations_indices_grouped <- end_stations_indices[, .N ,by="end station id"]
@@ -112,9 +124,9 @@ end_stations <- merge.data.table(end_stations_indices_sorted_byN,stations,
 fwrite(end_stations, file="end_stations_morning.csv")
 
 #wieczorem 16 - 19 ----
-end_stations_indices <- data.table(june[hour(starttime) >= 16 & hour(starttime) <= 19,"end station id"])
+end_stations_indices <- data.table(june[Weekday %in% days & hour(starttime) >= 16 & hour(starttime) <= 19,"end station id"])
 for(i in 7:9) {
-  end_stations_indices <- rbind(end_stations_indices, months[[i]][hour(starttime) >= 16 & hour(starttime) <= 19,"end station id"], use.names = FALSE)
+  end_stations_indices <- rbind(end_stations_indices, months[[i]][Weekday %in% days & hour(starttime) >= 16 & hour(starttime) <= 19,"end station id"], use.names = FALSE)
 }
 
 end_stations_indices_grouped <- end_stations_indices[, .N ,by="end station id"]
@@ -192,19 +204,23 @@ tripduration_over_hours <- data.table(hour = c(1:24), `0-15min` = duration_0_15m
 fwrite(tripduration_over_hours, file = "tripduration_over_hours.csv")
 
 ## ---- Sprawdzenie czy ludzie jeżdżą w parach ----
-group_trips <-data.table(read_csv("201906-citibike-tripdata.csv.zip"))
+group_trips <-data.table(whole_data[month %in% c("june", "july", "august"),])
 group_trips <- group_trips[order(starttime),list(`starttime`,`start station id`, `end station id`)]
 result_tab <- data.table(NULL)
 len <- dim(group_trips)[1]
 howmany <- 2
-for (i in 1:len-1) {
+for (i in 1:(len-1)) {
   iter <- 1
-  loop <- 1
-  for (j in i+1:len) {
-    minutes <- difftime(group_trips$starttime[j], group_trips$starttime[i], units = "min")
-    print(minutes)
-    if (minutes < 5) {
-      if (group_trips$`start station id`[i] == group_trips$`start station id`[j] && group_trips$`end station id`[i] == group_trips$`end station id`[j]){
+  for (j in (i+1):len) {
+    if (units.difftime(ymd_hms(group_trips$starttime[j]) - ymd_hms(group_trips$starttime[i])) == "secs") {
+      minutes <- 0
+    }
+    else {
+      minutes <- as.numeric(ymd_hms(group_trips$starttime[j]) - ymd_hms(group_trips$starttime[i]))
+    }
+    
+    if (minutes < 4) {
+      if (group_trips$`start station id`[i] == group_trips$`start station id`[j] & group_trips$`end station id`[i] == group_trips$`end station id`[j]){
         if (iter == 1) {
           row <- cbind(group_trips[i], howmany)
           result_tab <- rbind(result_tab, row)
@@ -215,7 +231,7 @@ for (i in 1:len-1) {
         iter <- iter + 1
       }
     }
-    else if(minutes >= 5){
+    else if(minutes >= 4){
         break;
       }
     }
