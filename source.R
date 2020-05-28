@@ -149,6 +149,7 @@ for ( i in 7:9) {
 }
 tourists_places <- tourists[,.N, by = c("end station latitude", "end station longitude")]
 tourists_places <- tourists_places[order(by = N, decreasing = TRUE)]
+fwrite(tourists_places, "tourists_places.csv")
 ## ---- TRASY osoby 7 - 18 lat - uczniowie pon - pt ----
 students_months <- april
 students_months <- rbind(students_months, may, september, use.names = FALSE)
@@ -254,7 +255,7 @@ for (i in 1:(len-1)) {
     }
   }
 
-
+fwrite(result_tab, "group_trips.csv")
 
 ## ---- Najdłużssze wypożyczenia ----
 # funkcja do wyboru najdłuższych wypożyczeń z poszczególnych miesięcy
