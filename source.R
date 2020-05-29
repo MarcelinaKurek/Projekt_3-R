@@ -21,7 +21,6 @@ november <- data.table(read_csv("201911-citibike-tripdata.csv.zip"))
 december <- data.table(read_csv("201912-citibike-tripdata.csv.zip"))
 
 ## mniejsze dane do pracy, żeby szybciej działało potem usuniemy
-
 january <- january[sample(nrow(january), 10000), ]
 february <- february[sample(nrow(february), 10000), ]
 march <- march[sample(nrow(march), 10000), ]
@@ -34,7 +33,6 @@ september <- september[sample(nrow(september), 10000), ]
 october <- october[sample(nrow(october), 10000), ]
 november <- november[sample(nrow(november), 10000), ]
 december <- december[sample(nrow(december), 10000), ]
-
 ## Dodanie kolumny z nazwą miesiąca
 january <- january[, month := "january"]
 february <- february[, month := "february"]
@@ -71,8 +69,7 @@ fwrite(by_usertype, "sub_vs_customers.csv")
 ## ---- baza stacji ----
 raw_stations <- data.table(january[, c("end station id", "end station name", "end station latitude", "end station longitude")])
 raw_stations <- rbind(raw_stations, january[, c("start station id", "start station name", 
-                                        "start station latitude", "start station longitude")], 
-                  use.names=FALSE)
+                                       "start station latitude", "start station longitude")],use.names=FALSE)
 for(i in 2:12) {
   raw_stations <- rbind(raw_stations, months[[i]][,c("end station id", "end station name", 
                                              "end station latitude", "end station longitude")], 
@@ -115,11 +112,11 @@ for(i in 7:9) {
 end_stations_indices_grouped <- end_stations_indices[, .N ,by="end station id"]
 end_stations_indices_drop_na <- end_stations_indices_grouped[!is.na(end_stations_indices_grouped$`end station id`) 
                                                              & end_stations_indices_grouped$`end station id` != "NULL",]
-end_stations_indices_sorted_byN <- end_stations_indices_drop_na[order(N, decreasing = TRUE)] 
+end_stations_indices_sorted_byN <- end_stations_indices_drop_na[order(by = N, decreasing = TRUE)] 
 setkey(stations, id)
 setkey(end_stations_indices_sorted_byN, `end station id`)
-end_stations <- merge.data.table(end_stations_indices_sorted_byN,stations,
-                                 by.x = key(end_stations_indices_sorted_byN) , by.y = key(stations),all.x = TRUE)
+end_stations_indices_sorted_byN$`end station id` <- as.character(end_stations_indices_sorted_byN$`end station id`)
+end_stations <- merge(end_stations_indices_sorted_byN,stations, by.x = "end station id", by.y = "id",all.x = TRUE)
 
 fwrite(end_stations, file="end_stations_morning.csv")
 
@@ -135,8 +132,8 @@ end_stations_indices_drop_na <- end_stations_indices_grouped[!is.na(end_stations
 end_stations_indices_sorted_byN <- end_stations_indices_drop_na[order(N, decreasing = TRUE)] 
 setkey(stations, id)
 setkey(end_stations_indices_sorted_byN, `end station id`)
-end_stations <- merge.data.table(end_stations_indices_sorted_byN,stations,
-                                 by.x = key(end_stations_indices_sorted_byN) , by.y = key(stations),all.x = TRUE)
+end_stations_indices_sorted_byN$`end station id` <- as.character(end_stations_indices_sorted_byN$`end station id`)
+end_stations <- merge(end_stations_indices_sorted_byN,stations, by.x = "end station id", by.y = "id",all.x = TRUE)
 
 fwrite(end_stations, file="end_stations_evening.csv")
 ## ---- gdzie jeżdzą turyści ----
@@ -222,7 +219,8 @@ tripduration_over_hours <- data.table(hour = c(1:24), `0-15min` = duration_0_15m
 fwrite(tripduration_over_hours, file = "tripduration_over_hours.csv")
 
 ## ---- Sprawdzenie czy ludzie jeżdżą w parach ----
-group_trips <-data.table(whole_data[month %in% c("june", "july", "august"),])
+group_trips <-june
+group_trips <- rbind(group_trips, july, august, use.names = FALSE)
 group_trips <- group_trips[order(starttime),list(`starttime`,`start station id`, `end station id`)]
 result_tab <- data.table(NULL)
 len <- dim(group_trips)[1]
@@ -244,7 +242,7 @@ for (i in 1:(len-1)) {
           result_tab <- rbind(result_tab, row)
         }
         else {
-          result_tab[dim(result_tab)[1]] <- result_tab[dim(result_tab)[1]] + 1
+          result_tab$howmany[dim(result_tab)[1]] <- result_tab$howmany[dim(result_tab)[1]] + 1
         }
         iter <- iter + 1
       }
