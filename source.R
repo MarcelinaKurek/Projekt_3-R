@@ -272,32 +272,9 @@ dane_do_wykresu <- wypozyczenia[, .("rok urodzenia" =`birth year`, `liczba osób
 fwrite(dane_do_wykresu, "Wiek i płeć użytkownikóW.csv")
 
 
-ggplot(data=dane_do_wykresu, aes(x=`rok urodzenia`, y=`liczba osób`, fill = as.factor(gender))) +
-  geom_bar(stat="identity")+
-  geom_text(aes(y=0, label=10), vjust=1.6, 
-            color="white", size=3.5)+
-  scale_fill_brewer(palette = "Dark2", name = "Płeć", labels = c("Brak danych", "Mężczyzna", "Kobieta") )+
-  ggtitle("Chrarakterystyka użytkowników")
-
-  
-  
-  
   ### --porówanie ruchu w poszczególnych miesiącach-- 
 ruch <- lapply(months,  FUN = nrow)
 which.max(ruch)
-
-
-
-# kod generujący wykres ruchu w ciągu roku
-ruch <- lapply(months,  FUN = nrow)
-ruch <- unlist(ruch)
-names(ruch) = c("STY", "LUT", "MAR", "KWI", "MAJ", "CZE", "LIP", "SIE", "WRZ", "PAZ", "LIS", "GRU")
-palette(brewer.pal(11, "Spectral"))
-barplot(ruch, las = 1, col = c(5, 6, 7 ,5, 4, 3, 2, 1, 11, 10, 9, 8), ylim = c(0, 50000), at = NULL)
-ticks<-c(0, 10000,20000,30000,40000, 50000)
-axis(2,at=ticks,labels=c("0", "10.000", "20.000", "30.000", "40.000", "50.000"), las = 1)
-axis(1, at = seq(0.6, 14, length.out = 12), labels = names(ruch))
-title("Liczba wypożyczonych rowerów w ciągu roku")
 
 
 
@@ -306,17 +283,6 @@ title("Liczba wypożyczonych rowerów w ciągu roku")
 czas_wypozyczenia <- wszystko[, .(month, tripduration, srednia = mean(tripduration)/60 ), by = month]
 czas_wypozyczenia <- distinct(czas_wypozyczenia[, .("miesiąc" = month, "srednia długość podróży [min]" = srednia)])
 fwrite(czas_wypozyczenia, file = "czas_wypozyczenia_rowerow.csv")
-
-paleta <- palette(brewer.pal(12, "Paired"))
-
-#wykres
-ggplot(data=czas_wypozyczenia, aes(x= reorder(`miesiąc`, c(1:12)), y=`srednia długość podróży [min]`, fill = `miesiąc`)) +
-  geom_bar(stat="identity")+
-  scale_fill_manual(values = paleta)+
-  scale_x_discrete(labels=c("STY", "LUT", "MAR", "KWI", "MAJ", "CZE", "LIP", "SIE", "WRZ", "PAZ", "LIS", "GRU"))+
-  xlab("")+
-  ggtitle("Średnia długość podróży w poszczególnych miesiącach")+
-  theme(legend.position = "none")
 
 
 ## ----porówanie dnia powszedniego z weekendem dla miesięc czerwiec -wrzesien----
@@ -341,14 +307,6 @@ Weekend_vs_zwykly <- Weekend_vs_zwykly[, .(month, weekend, tydzien = n1+tydzien*
 Weekend_vs_zwykly <- distinct(Weekend_vs_zwykly)
 fwrite(Weekend_vs_zwykly, file = "Weekend_vs_zwykly.csv")
 
-#wykres
-ggplot(Weekend_vs_zwykly, aes(x=tydzien ,y=srednia, group=weekend, colour=weekend)) +
-  geom_point()+
-  geom_line(size = 1)+
-  ggtitle("Średnia ilość wypożyczeń w ciągu dnia w kolejnych tygodniach")+
-  scale_colour_brewer(palette = "Set1", name = "", labels = c("Dni powszednie", "Weekendy") )+
-  ylab("Ilość wypożyczeń [szt]")+
-  xlab("")
 
 
 
