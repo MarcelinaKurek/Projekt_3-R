@@ -5,6 +5,7 @@ library(dplyr)
 library(ggplot2)
 library(RColorBrewer)
 library(lubridate)
+library(dplyr)
 
 
 january <- data.table(read_csv("201901-citibike-tripdata.csv.zip"))
@@ -26,7 +27,7 @@ february <- february[sample(nrow(february), 10000), ]
 march <- march[sample(nrow(march), 10000), ]
 april <- april[sample(nrow(april), 10000), ]
 may <- may[sample(nrow(may), 10000), ]
-june <- june[sample(nrow(june), 10000), ]
+june <- june[sample(nrow(june), 100000), ]
 july <- july[sample(nrow(july), 10000), ]
 august <- august[sample(nrow(august), 10000), ]
 september <- september[sample(nrow(september), 10000), ]
@@ -180,7 +181,8 @@ setnames(routes, old = oldnames, new=newnames, skip_absent = TRUE)
 routes <- merge.data.table(routes, stations, by.x = "end station id", by.y = "id", all.x = TRUE, all.y = FALSE)
 newnames <- c("end latitude", "end longitude")
 setnames(routes, old = oldnames, new=newnames, skip_absent = TRUE)
-
+routes <- routes[, .N, by = list("start latitude", "start longitude", "end latitude", "end longitude")]
+routes <- routes[order(by = N, decreasing = TRUE),]
 fwrite(routes[, c("N" ,"start latitude", "start longitude", "end latitude", "end longitude", "month")], "routes_to_plot.csv")
 
 ## ---- obserwacje ruchu na podstawie godzin( w których godzinach są krótkie trasy a w których długie) ----
@@ -204,16 +206,23 @@ duration_over_45min <- hours_observations[`duration in minutes` > 45, 'hour']
 # very short
 duration_0_15min_grouped <- duration_0_15min[, .N, by = 'hour']
 duration_0_15min_grouped <- duration_0_15min_grouped[order(hour, decreasing = FALSE)]
+veryshort_count <- duration_0_15min_grouped[, sum(N)]
 #short
 duration_15_30min_grouped <- duration_15_30min[, .N, by = 'hour']
 duration_15_30min_grouped <- duration_15_30min_grouped[order(hour, decreasing = FALSE)]
+short_count <- duration_15_30min_grouped[, sum(N)]
 #average
 duration_30_45min_grouped <- duration_30_45min[, .N, by = 'hour']
 duration_30_45min_grouped <- duration_30_45min_grouped[order(hour, decreasing = FALSE)]
+average_count <- duration_30_45min_grouped[, sum(N)]
 #long
 duration_over_45min_grouped <- duration_over_45min[, .N, by = 'hour']
 duration_over_45min_grouped <- duration_over_45min_grouped[order(hour, decreasing = FALSE)]
+long_count <- duration_over_45min_grouped[, sum(N)]
 
+typy_podrozy <- list("veryshort", "short", "average", "long")
+typy_podrozy_zliczone <- data.table(`typ podrozy` = typy_podrozy, N = list(veryshort_count, short_count, average_count, long_count))
+fwrite(typy_podrozy_zliczone, "ile_podrozy_okreslonej_dl.csv")
 tripduration_over_hours <- data.table(hour = c(1:24), `0-15min` = duration_0_15min_grouped, `15-30min` = duration_15_30min_grouped,
                                       `30-45min` = duration_30_45min_grouped, `over 45min`=duration_over_45min_grouped)
 fwrite(tripduration_over_hours, file = "tripduration_over_hours.csv")
@@ -221,38 +230,54 @@ fwrite(tripduration_over_hours, file = "tripduration_over_hours.csv")
 ## ---- Sprawdzenie czy ludzie jeżdżą w parach ----
 group_trips <-june
 group_trips <- rbind(group_trips, july, august, use.names = FALSE)
-group_trips <- group_trips[order(starttime),list(`starttime`,`start station id`, `end station id`)]
+group_trips <- group_trips[,list(`starttime`,`start station id`, `end station id`)]
+group_trips$`start station id` <- as.character(group_trips$`start station id`)
+group_trips$`end station id` <- as.character(group_trips$`end station id`)
+group_trips <- group_trips[, start_end := paste(`start station id`, `end station id`, sep=" ")]
 result_tab <- data.table(NULL)
-len <- dim(group_trips)[1]
-howmany <- 2
-for (i in 1:(len-1)) {
-  iter <- 1
-  for (j in (i+1):len) {
-    if (units.difftime(ymd_hms(group_trips$starttime[j]) - ymd_hms(group_trips$starttime[i])) == "secs") {
-      minutes <- 0
-    }
-    else {
-      minutes <- as.numeric(ymd_hms(group_trips$starttime[j]) - ymd_hms(group_trips$starttime[i]))
-    }
-    
-    if (minutes < 4) {
-      if (group_trips$`start station id`[i] == group_trips$`start station id`[j] & group_trips$`end station id`[i] == group_trips$`end station id`[j]){
-        if (iter == 1) {
-          row <- cbind(group_trips[i], howmany)
-          result_tab <- rbind(result_tab, row)
-        }
-        else {
-          result_tab$howmany[dim(result_tab)[1]] <- result_tab$howmany[dim(result_tab)[1]] + 1
-        }
-        iter <- iter + 1
+
+count_groups <- function(x) {
+  result_tab <- data.table(NULL)
+  len <- length(x)
+  howmany <- 2
+  for (i in 1:(len - 1)) {
+    iter <- 1
+    for (j in (i + 1):len) {
+      if (units.difftime(ymd_hms(x[j]$starttime) - ymd_hms(x[i]$starttime)) == "secs") {
+        minutes <- 0
       }
-    }
-    else if(minutes >= 4){
+      else if (units.difftime(ymd_hms(x[j]$starttime) - ymd_hms(x[i]$starttime)) == "mins") {
+        minutes <- as.numeric(ymd_hms(x[j]$starttime) - ymd_hms(x[i]$starttime))
+      }
+      else {
+        break;
+      }
+      if (minutes < 4) {
+          if (iter == 1) {
+            row <- cbind(x[i], howmany)
+            result_tab <- rbind(result_tab, row, use.names = FALSE)
+            print("pierwszy raz")
+            print(row)
+            
+          }
+          else {
+            result_tab$howmany[dim(result_tab)[1]] <- result_tab$howmany[dim(result_tab)[1]] + 1
+            print(result_tab)
+            print("drugi")
+          }
+          iter <- iter + 1
+        }
+      else if(minutes >= 4){
         break;
       }
     }
   }
-
+  return(result_tab)
+}
+group_trips <- group_trips %>% group_by(start_end) #%>% group_map(data = .x, .f = count_groups())
+by_ids <- split(group_trips, group_trips$start_end)
+by_ids_copy <- copy(by_ids)
+result <- lapply(by_ids_copy, count_groups)
 fwrite(result_tab, "group_trips.csv")
 
 ## ---- Najdłużssze wypożyczenia ----

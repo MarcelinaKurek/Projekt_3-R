@@ -1,0 +1,34 @@
+---
+title: "tekst_prezentacji"
+author: "Maria Kałuska, Marcelina Kurek"
+date: "1 06 2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Informacje ogólne
+W Nowym Jorku mieszka prawie 8.5 mln osób.
+W ciagu roku 2019 było aż 20.5 mln wypożyczeń.
+Z tego wynika, że średnio na jednego mieszkańca Nowego Jorku przypadają tylko 2.4 wypożyczenia roweru rocznie.
+Łącznie wszystkich rowerów było około 20 tys.
+Wszystkich stacji jest około 1000.
+
+## Najczęstsze trasy
+Nowojorczycy najczęściej obierają trasy
+
+## Customers vs subscribers
+Zakładając, że większość customers to turyści. Możemy powiedzieć, że turyści stanowią 14% wszystkich wypożyczeń.
+Biorąc pod uwagę to, że Nowy Jork odwiedziło w roku 2019 ponad 65 mln turystów zauważamy, że tylko 4.5% tyrustów korzysta z roweru w trakcie swojego pobytu w Nowym Jorku.
+Podsumowując głównymi użytkownikami rowerów miejskich są mieszkańcy Nowego Jorku.
+
+## Długość podróży
+Obserwujemy, że długość podróży jest uwarunkowana porą dnia.
+Ludzie używają rowerów do bardzo krótkich przejażdżek głównie w godzinach 9-10 oraz 18-19.
+Podobnie jest z podróżami 15 - 30 min, z tą różnicą, że większe natężenie ruchu jest o 9 niż o 10.
+Na średniej długości przejażdżki, jeździ się głównie 17 - 19.
+Długie przejażdzki wybierane są rzadko, możliwe, że ze względu na dodatkowe opłaty z tym związane.( Dla osób korzystających całorocznie, darmowe są przejażdżki do 45 min. Potem trzeba dopłacać za dodatkowe minuty.)
+Najczęściej na długie przejażdżki jeżdzi się od 12 do 19.
+

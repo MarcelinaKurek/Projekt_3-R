@@ -3,7 +3,20 @@ library(shinythemes)
 
 ui <- fluidPage(
   includeCSS("styles.css"),
-  navbarPage("Analiza danych NYC Bike Share", theme = shinytheme("cosmo"), header=tags$head(includeCSS("styles.css")) ,
+  navbarPage("Analiza danych NYC Bike Share", header=tags$head(includeCSS("styles.css")) ,
+             tabPanel("Ogólne",
+                      sidebarLayout(
+                        sidebarPanel(),
+                        mainPanel(
+                          h2("Liczba wypożyczeń w ciągu roku - 20.551.697"),
+                          h2("Liczba wszystkich używanych rówerów - 19.571"),
+                          h2("Liczba wszystkich stacji ~ 1.000"),
+                          br(),
+                          h3("Wypożyczenia w poszczególnych miesiącach.")
+                          
+                        )
+                        )
+                      ),
              tabPanel("Najczęstsze trasy",
                       sidebarLayout(
                         sidebarPanel(
@@ -35,7 +48,8 @@ ui <- fluidPage(
                                                    "średnia - 30 - 45 min"=3, "długa - ponad 45 min"=4), selected = c(1,2,3,4))
                         ),
                         mainPanel(
-                          plotOutput("dlPodrozy")
+                          plotOutput("dlPodrozy", width = "100%"),
+                          plotOutput("barPlotDlPodrozy")
                         )
                       )),
              tabPanel("Zagęszczenie ruchu na stacjach",
@@ -58,28 +72,22 @@ server <- function(input, output) {
   library(readr)
   library(ggplot2)
   
-  Routes <- data.table(read_csv("routes_to_plot.csv"))
   
   output$favorite_routes <- renderPlot({
-    
-    routes_to_plot2 <- Routes[month >= input$okres[1] & month <= input$okres[2],]
-    routes_to_plot2 <- routes_to_plot2[,sum(N), by=list(`start latitude`,`start longitude`, `end latitude`, `end longitude`)]
-    routes_to_plot2 <- routes_to_plot2[order(V1, decreasing = TRUE)]
-    routes_to_plot2 <- routes_to_plot2[1:100,]
-    routes_to_plot2 <- routes_to_plot2[,ID := .I]
-    routes_to_plot2 <- rbind(routes_to_plot2[,c("start latitude", "start longitude", "ID")],
-                             routes_to_plot2[,c("end latitude", "end longitude", "ID")], use.names=FALSE)
-    
-    ggplot(routes_to_plot2, aes(x=`start longitude`, y=`start latitude`, group=ID)) +
-      geom_point(size=2, color="black") +
-      geom_line(color="red")
+   # Routes <- data.table(read_csv("przeliczone_dane/routes_to_plot.csv"))
+    #routes_to_plot2 <- Routes[1:100,ID := .I]
+    #routes_to_plot2 <- rbind(routes_to_plot2[,c("start latitude", "start longitude", "ID")],
+     #                        routes_to_plot2[,c("end latitude", "end longitude", "ID")], use.names=FALSE)
+    #ggplot(routes_to_plot2[,c("start latitude", "start longitude", "ID")], aes(x=`start longitude`, y=`start latitude`, group=ID)) +
+     # geom_point(size=2, color="black") +
+     # geom_line(color="red")
   })
   
   output$sub_vs_cust <- renderPlot({
-    df <- read_csv(file = "sub_vs_customers.csv")
+    df <- read_csv(file = "przeliczone_dane/sub_vs_customers.csv")
     ggplot(data=df, aes(x = usertype, y=N, fill=as.factor(N))) +
       geom_bar(stat="identity") +
-      scale_fill_manual(values=c("purple", "orange")) +
+      scale_fill_manual(values=c("#6a040f", "#e85d04")) +
       theme(legend.position = "none") +
       xlab("Typ użytkownika") +
       ggtitle("Liczba wypożyczeń z uwagi na typ użytkownika w skali roku")
@@ -87,7 +95,7 @@ server <- function(input, output) {
   })
   
   output$dlPodrozy <- renderPlot({
-    trips_hours <- read_csv("tripduration_over_hours.csv")
+    trips_hours <- read_csv("przeliczone_dane/tripduration_over_hours.csv")
     dt <- data.table(NULL)
     print(input$btns[1])
       for (i in 1: length(input$btns)) {
@@ -124,10 +132,21 @@ server <- function(input, output) {
     if (dim(dt) != 0) {
       ggplot(data=dt,aes(x=hour, y = `długość podróży`, color = `długość podróży`, size=N)) +
         geom_point(alpha=0.5) +
-        scale_size( name="Liczba wypożyczeń (N)")
+        scale_size( name="Liczba wypożyczeń (N)", range = c(1,12)) +
+        ggtitle("Długość podróży w poszczególnych godzinach.(czerwiec - wrzesień)")
     }
     
+  })
+  
+  output$barPlotDlPodrozy <- renderPlot({
     
+    dane <- read.csv("ile_podrozy_okreslonej_dl.csv")
+    ggplot(data=dane,aes(x = `typ.podrozy`, y = N, fill = as.factor(N))) +
+      geom_bar(stat="identity", width = 0.4) +
+      scale_fill_manual(values=c("#05668d", "#028090", "#00a896", "#02c39a" )) +
+      theme(legend.position = "none") +
+      xlab("Typ podróży") +
+      ggtitle("Liczba podróży danej długości(czerwiec - wrzesień)")
   })
   
   output$stacje <- renderPlot({
