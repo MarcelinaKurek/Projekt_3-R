@@ -5,7 +5,6 @@ library(dplyr)
 library(ggplot2)
 library(RColorBrewer)
 library(lubridate)
-library(dplyr)
 
 
 january <- data.table(read_csv("201901-citibike-tripdata.csv.zip"))
@@ -27,7 +26,7 @@ february <- february[sample(nrow(february), 10000), ]
 march <- march[sample(nrow(march), 10000), ]
 april <- april[sample(nrow(april), 10000), ]
 may <- may[sample(nrow(may), 10000), ]
-june <- june[sample(nrow(june), 100000), ]
+june <- june[sample(nrow(june), 10000), ]
 july <- july[sample(nrow(july), 10000), ]
 august <- august[sample(nrow(august), 10000), ]
 september <- september[sample(nrow(september), 10000), ]
@@ -181,8 +180,7 @@ setnames(routes, old = oldnames, new=newnames, skip_absent = TRUE)
 routes <- merge.data.table(routes, stations, by.x = "end station id", by.y = "id", all.x = TRUE, all.y = FALSE)
 newnames <- c("end latitude", "end longitude")
 setnames(routes, old = oldnames, new=newnames, skip_absent = TRUE)
-routes <- routes[, .N, by = list("start latitude", "start longitude", "end latitude", "end longitude")]
-routes <- routes[order(by = N, decreasing = TRUE),]
+
 fwrite(routes[, c("N" ,"start latitude", "start longitude", "end latitude", "end longitude", "month")], "routes_to_plot.csv")
 
 ## ---- obserwacje ruchu na podstawie godzin( w których godzinach są krótkie trasy a w których długie) ----
@@ -206,23 +204,16 @@ duration_over_45min <- hours_observations[`duration in minutes` > 45, 'hour']
 # very short
 duration_0_15min_grouped <- duration_0_15min[, .N, by = 'hour']
 duration_0_15min_grouped <- duration_0_15min_grouped[order(hour, decreasing = FALSE)]
-veryshort_count <- duration_0_15min_grouped[, sum(N)]
 #short
 duration_15_30min_grouped <- duration_15_30min[, .N, by = 'hour']
 duration_15_30min_grouped <- duration_15_30min_grouped[order(hour, decreasing = FALSE)]
-short_count <- duration_15_30min_grouped[, sum(N)]
 #average
 duration_30_45min_grouped <- duration_30_45min[, .N, by = 'hour']
 duration_30_45min_grouped <- duration_30_45min_grouped[order(hour, decreasing = FALSE)]
-average_count <- duration_30_45min_grouped[, sum(N)]
 #long
 duration_over_45min_grouped <- duration_over_45min[, .N, by = 'hour']
 duration_over_45min_grouped <- duration_over_45min_grouped[order(hour, decreasing = FALSE)]
-long_count <- duration_over_45min_grouped[, sum(N)]
 
-typy_podrozy <- list("veryshort", "short", "average", "long")
-typy_podrozy_zliczone <- data.table(`typ podrozy` = typy_podrozy, N = list(veryshort_count, short_count, average_count, long_count))
-fwrite(typy_podrozy_zliczone, "ile_podrozy_okreslonej_dl.csv")
 tripduration_over_hours <- data.table(hour = c(1:24), `0-15min` = duration_0_15min_grouped, `15-30min` = duration_15_30min_grouped,
                                       `30-45min` = duration_30_45min_grouped, `over 45min`=duration_over_45min_grouped)
 fwrite(tripduration_over_hours, file = "tripduration_over_hours.csv")
@@ -230,109 +221,94 @@ fwrite(tripduration_over_hours, file = "tripduration_over_hours.csv")
 ## ---- Sprawdzenie czy ludzie jeżdżą w parach ----
 group_trips <-june
 group_trips <- rbind(group_trips, july, august, use.names = FALSE)
-group_trips <- group_trips[,list(`starttime`,`start station id`, `end station id`)]
-group_trips$`start station id` <- as.character(group_trips$`start station id`)
-group_trips$`end station id` <- as.character(group_trips$`end station id`)
-group_trips <- group_trips[, start_end := paste(`start station id`, `end station id`, sep=" ")]
+group_trips <- group_trips[order(starttime),list(`starttime`,`start station id`, `end station id`)]
 result_tab <- data.table(NULL)
-
-count_groups <- function(x) {
-  result_tab <- data.table(NULL)
-  len <- length(x)
-  howmany <- 2
-  for (i in 1:(len - 1)) {
-    iter <- 1
-    for (j in (i + 1):len) {
-      if (units.difftime(ymd_hms(x[j]$starttime) - ymd_hms(x[i]$starttime)) == "secs") {
-        minutes <- 0
-      }
-      else if (units.difftime(ymd_hms(x[j]$starttime) - ymd_hms(x[i]$starttime)) == "mins") {
-        minutes <- as.numeric(ymd_hms(x[j]$starttime) - ymd_hms(x[i]$starttime))
-      }
-      else {
-        break;
-      }
-      if (minutes < 4) {
-          if (iter == 1) {
-            row <- cbind(x[i], howmany)
-            result_tab <- rbind(result_tab, row, use.names = FALSE)
-            print("pierwszy raz")
-            print(row)
-            
-          }
-          else {
-            result_tab$howmany[dim(result_tab)[1]] <- result_tab$howmany[dim(result_tab)[1]] + 1
-            print(result_tab)
-            print("drugi")
-          }
-          iter <- iter + 1
+len <- dim(group_trips)[1]
+howmany <- 2
+for (i in 1:(len-1)) {
+  iter <- 1
+  for (j in (i+1):len) {
+    if (units.difftime(ymd_hms(group_trips$starttime[j]) - ymd_hms(group_trips$starttime[i])) == "secs") {
+      minutes <- 0
+    }
+    else {
+      minutes <- as.numeric(ymd_hms(group_trips$starttime[j]) - ymd_hms(group_trips$starttime[i]))
+    }
+    
+    if (minutes < 4) {
+      if (group_trips$`start station id`[i] == group_trips$`start station id`[j] & group_trips$`end station id`[i] == group_trips$`end station id`[j]){
+        if (iter == 1) {
+          row <- cbind(group_trips[i], howmany)
+          result_tab <- rbind(result_tab, row)
         }
-      else if(minutes >= 4){
+        else {
+          result_tab$howmany[dim(result_tab)[1]] <- result_tab$howmany[dim(result_tab)[1]] + 1
+        }
+        iter <- iter + 1
+      }
+    }
+    else if(minutes >= 4){
         break;
       }
     }
   }
-  return(result_tab)
-}
-group_trips <- group_trips %>% group_by(start_end) #%>% group_map(data = .x, .f = count_groups())
-by_ids <- split(group_trips, group_trips$start_end)
-by_ids_copy <- copy(by_ids)
-result <- lapply(by_ids_copy, count_groups)
+
 fwrite(result_tab, "group_trips.csv")
 
 ## ---- Najdłużssze wypożyczenia ----
-# funkcja do wyboru najdłuższych wypożyczeń z poszczególnych miesięcy
-najdluzsze_podroze <- function(miesiac, ile = 6, min_czas_trwania = 0){
-  x <- miesiac[tripduration >= min_czas_trwania,][order(tripduration, decreasing = TRUE)]
-  ifelse(nrow(x) > ile, head(x, ile), x)
-}
+# 
 
-## struktura użytkowników
-##wykres słupkowy
 wszystko_razem <-  function(x,y) merge.data.table(x,y,all=TRUE) 
 wszystko <- Reduce(wszystko_razem, months)
-wypozyczenia <- wszystko[`birth year` > 1950, .(`birth year`, gender)]
 
-dane_do_wykresu <- wypozyczenia[, .("rok urodzenia" =`birth year`, `liczba osób` = .N), by = list(`birth year`, gender)]
-fwrite(dane_do_wykresu, "Wiek i płeć użytkownikóW.csv")
-
-
-  ### --porówanie ruchu w poszczególnych miesiącach-- 
-ruch <- lapply(months,  FUN = nrow)
-which.max(ruch)
+## Liczba wypożyczeń w poszczególnych miesiącach
+liczba_rowerow <- lapply(months,  FUN = nrow)
+liczba_rowerow <- cbind("miesiace" = 1:12, liczba_rowerow)
+liczba_rowerow <- as.data.table(liczba_rowerow)
+fwrite(liczba_rowerow, "ruch.csv")
 
 
+## Struktura użytkownikóW
+wypozyczenia <- wszystko[`birth year` > 1950, .(`birth year`, gender, usertype)]
 
-## --Średni czas wypożyczenia roweru w poszczególnych miesiącach--
+dane_do_wykresu <- wypozyczenia[, .("rok urodzenia" =`birth year`, `liczba osob` = .N, usertype), by = list(`birth year`, gender, usertype)][order(`rok urodzenia`)]
+dane_do_wykresu <- dane_do_wykresu[, c(2, 4, 5, 6)]
+fwrite(dane_do_wykresu, "age_and_gender.csv")
 
+
+##Sredni czas wypożyczenia roweru w miesiącu
 czas_wypozyczenia <- wszystko[, .(month, tripduration, srednia = mean(tripduration)/60 ), by = month]
-czas_wypozyczenia <- distinct(czas_wypozyczenia[, .("miesiąc" = month, "srednia długość podróży [min]" = srednia)])
-fwrite(czas_wypozyczenia, file = "czas_wypozyczenia_rowerow.csv")
+czas_wypozyczenia <- distinct(czas_wypozyczenia[, .("miesiac" = month, "srednia_dl" = srednia)])
+fwrite(czas_wypozyczenia, "czas_wypozyczenia.csv")
 
 
-## ----porówanie dnia powszedniego z weekendem dla miesięc czerwiec -wrzesien----
-
-
-czerwiec_wrzesien <- c("june", "july", "august", "september")
-Weekend_vs_zwykly <- wszystko[month %in% czerwiec_wrzesien, .("data" = as.Date(starttime), month)]
-Weekend_vs_zwykly
-
-# 1 czerwca - sobota
-soboty <- seq.Date(as.Date("2019-06-01"), to = as.Date("2019-09-30"), by = 7 )
-niedziele <- seq.Date(as.Date("2019-06-02"), to = as.Date("2019-09-30"), by = 7 )
-
-n1 <- as.Date("2019-06-02")
-Weekend_vs_zwykly <- Weekend_vs_zwykly[, .(data, month, "weekend" = (data %in% soboty | data %in% niedziele))]
-Weekend_vs_zwykly <- Weekend_vs_zwykly[, .(data, month, weekend, "tydzien" = ceiling((data - n1)/7))][order(tydzien)]
-Weekend_vs_zwykly <- Weekend_vs_zwykly[, .(data, month, "weekend" = as.character(weekend), tydzien, "liczba_tras"= .N) , by = c("tydzien", "weekend")]
-Weekend_vs_zwykly[, c(1:2)] <- NULL
+#Porównanie weekendu i dnia powszedniego na przestrzeni roku
+Weekend_vs_zwykly <- wszystko[, .("data" = as.Date(starttime), month, weekend = (Weekday == "sobota" | Weekday == "niedziela" ))]
+Weekend_vs_zwykly <- Weekend_vs_zwykly[, .(data, month, "weekend" = as.character(weekend), "tydzien" = as.integer(ceiling((data - n1)/7)))][order(data)]
+Weekend_vs_zwykly <- Weekend_vs_zwykly[, .(data, month, tydzien, "liczba_tras"= .N) , by = c("tydzien", "weekend")] #mamy liczbę tras w każdym dniu tygodnia
+Weekend_vs_zwykly[, c(1,4)] <- NULL
 Weekend_vs_zwykly <- distinct(Weekend_vs_zwykly)
-Weekend_vs_zwykly <- Weekend_vs_zwykly[, .(month, weekend, tydzien, liczba_tras, dni = .N), by = "liczba_tras"]
-Weekend_vs_zwykly <- Weekend_vs_zwykly[, .(month, weekend, tydzien = n1+tydzien*7, "srednia" = liczba_tras/dni)]
+Weekend_vs_zwykly <- Weekend_vs_zwykly[, .(weekend, tydzien, liczba_tras, "dni" = .N), by = "liczba_tras"]
+Weekend_vs_zwykly <- Weekend_vs_zwykly[, .(weekend, "tydzien" = n1 + 7*tydzien, "srednia" = liczba_tras/dni)]
 Weekend_vs_zwykly <- distinct(Weekend_vs_zwykly)
-fwrite(Weekend_vs_zwykly, file = "Weekend_vs_zwykly.csv")
+fwrite(Weekend_vs_zwykly, "Weekend_vs_zwykly.csv")
 
 
+##Porównanie godzin wypożyczeń dla weekendów i dni powszednich (z uwzględnieniem subskrypcji i częściowym uwzględnieniem wieku)
+d1 <- as.Date("2018-12-31")
+Weekend_godzinowo <- wszystko[, .("godzina" = hour(starttime), "data" = as.Date(starttime), weekend = (Weekday == "sobota" | Weekday == "niedziela" ), 
+                                  usertype, student= (`birth year` >= 1993))]
+Weekend_godzinowo <- Weekend_godzinowo[, .(godzina, data = as.integer(ceiling((data - d1)/7)) , "weekend" = as.character(weekend), "liczba_tras" = .N, 
+                                           usertype, student = as.character(student)), by = c("godzina", "weekend", "data", "usertype", "student") ][order(godzina)]
+Weekend_godzinowo[, 1:5] <- NULL
+Weekend_godzinowo <- Weekend_godzinowo[, .(godzina, weekend, liczba_tras, usertype, student)]
+Weekend_godzinowo <- distinct(Weekend_godzinowo)
+fwrite(Weekend_godzinowo, "Weekend_godzinowo.csv")
 
-
-
+##Porównanie weekendu godzinowo bez uwzględniania wieku i typu subskrypcji (ot prostsza wersja)
+d1 <- as.Date("2018-12-31")
+Weekend_godzinowo <- wszystko[, .("godzina" = hour(starttime), "data" = as.Date(starttime), weekend = (Weekday == "sobota" | Weekday == "niedziela" ))]
+Weekend_godzinowo <- Weekend_godzinowo[, .(godzina, data = as.integer(ceiling((data - d1)/7)) , "weekend" = as.character(weekend), "liczba_tras" = .N), by = c("godzina", "weekend", "data") ][order(godzina)]
+Weekend_godzinowo[, 1:3] <- NULL
+Weekend_godzinowo <- Weekend_godzinowo[, .(godzina, data = d1 + 7*data, weekend, liczba_tras)]
+Weekend_godzinowo <- distinct(Weekend_godzinowo)

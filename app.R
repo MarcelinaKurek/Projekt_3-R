@@ -1,5 +1,6 @@
 library(shiny)
 library(shinythemes)
+library(data.table)
 
 ui <- fluidPage(
   includeCSS("styles.css"),
@@ -12,7 +13,8 @@ ui <- fluidPage(
                           h2("Liczba wszystkich używanych rówerów - 19.571"),
                           h2("Liczba wszystkich stacji ~ 1.000"),
                           br(),
-                          h3("Wypożyczenia w poszczególnych miesiącach.")
+                          h3("Wypożyczenia w poszczególnych miesiącach."),
+                          plotOutput("Wypozyczone_rowery")
                           
                         )
                         )
@@ -32,10 +34,15 @@ ui <- fluidPage(
              tabPanel("Kto więcej wypożycza?",
                       sidebarLayout(
                         sidebarPanel(
-                         p("Zauważamy, że znacznie częściej z rowerów korzystają osoby z roczną subskrypcją.")
+                         p("Zauważamy, że znacznie częściej z rowerów korzystają osoby z roczną subskrypcją."),
+                         checkboxGroupInput(inputId = "plec", label = "Wybierz płeć użytkownika", 
+                                            choices = c("Brak danych", "Mężczyzna", "Kobieta"), selected = c("Brak danych", "Mężczyzna", "Kobieta")),
+                         checkboxGroupInput(inputId = "sub", label = "Wybierz typ subskrypcji",
+                                            choices = c("Subscriber", "Customer"), selected = c("Subscriber", "Customer") )
                         ),
                         mainPanel(
-                          plotOutput("sub_vs_cust")
+                          plotOutput("sub_vs_cust"),
+                          plotOutput("age_and_gender")
                         ),
                         
                       )
@@ -49,7 +56,8 @@ ui <- fluidPage(
                         ),
                         mainPanel(
                           plotOutput("dlPodrozy", width = "100%"),
-                          plotOutput("barPlotDlPodrozy")
+                          plotOutput("barPlotDlPodrozy"),
+                          plotOutput("Srednia_dl_podrozy")
                         )
                       )),
              tabPanel("Zagęszczenie ruchu na stacjach",
@@ -61,7 +69,27 @@ ui <- fluidPage(
                           plotOutput("rano"),
                           plotOutput("wieczor")
                         )
-                      ))
+                      )),
+             tabPanel("Weekendy czy dni powszednie?",
+                      sidebarLayout(
+                        sidebarPanel(
+                          checkboxGroupInput(inputId = "stud", label = "Wybierz co chcesz", 
+                                             choices = c("Młodzież i studenci", "Pozostali użytkownicy"), selected = c("Młodzież i studenci", "Pozostali użytkownicy")
+                          ),
+                          checkboxGroupInput(inputId = "typ", label = "Wybierz typ subskrypcji",
+                                             choices = c("Subscribers", "Customers"), selected =c("Subscribers", "Customers") 
+                          )
+                          
+                          
+                        ),
+                        mainPanel(
+                          plotOutput("ruch_weekendy"),
+                          plotOutput("ruch_godzinowo")
+                          
+                        )
+                      )
+                      
+             )
   )
   
 )
@@ -179,6 +207,96 @@ server <- function(input, output) {
       theme(legend.title = element_text("Liczba zwrotów rowerów na stacji"))
     
   })
+  output$Wypozyczone_rowery <- renderPlot({
+    ruch <- read_csv("ruch.csv")
+    ggplot(ruch, aes(x = reorder(`miesiace`, c(1:12)), y = liczba_rowerow, fill = liczba_rowerow))+
+      geom_bar(stat = "identity")+
+      #ggtitle("Liczba wypożyczonych rowerów w ciągu roku")+
+      ylab("Liczba wypożyczonych rowerów [szt]")+
+      xlab("")+
+      scale_x_discrete(labels=c("STY", "LUT", "MAR", "KWI", "MAJ", "CZE", "LIP", "SIE", "WRZ", "PAZ", "LIS", "GRU"))
+    
+  })
+  output$age_and_gender <- renderPlot({
+    age_and_gender <- read_csv("Age_and_gender.csv")
+    paleta = c("#1B9E77", "#D95F02", "#7570B3")
+    if( !("Brak danych" %in% input$plec)){
+      age_and_gender <- age_and_gender[age_and_gender$gender != 0,]
+      paleta <- c("#D95F02", "#7570B3")
+    }
+    if( !("Kobieta" %in% input$plec)){
+      age_and_gender <- age_and_gender[age_and_gender$gender != 2,]
+      paleta = c("#D95F02", "#1B9E77")
+    }
+    if( !("Mężczyzna" %in% input$plec)){
+      age_and_gender <- age_and_gender[age_and_gender$gender != 1,]
+      paleta = c("#7570B3", "#1B9E77")
+    }
+    if( !("Subscriber" %in% input$sub)){
+      age_and_gender <- age_and_gender[age_and_gender$usertype != "Subscriber",]
+    }
+    if( !("Customer" %in% input$sub)){
+      age_and_gender <- age_and_gender[age_and_gender$usertype != "Customer",]
+    }
+    
+    ggplot(data=age_and_gender, aes(x=`rok urodzenia`, y=`liczba osob`, fill = as.factor(gender))) +
+      geom_bar(stat="identity")+
+      geom_text(aes(y=0, label=10), vjust=1.6, 
+                color="white", size=3.5)+
+      scale_fill_manual(values = paleta, name = "Płeć", labels = c(input$plec) )+
+      ggtitle("Chrarakterystyka użytkowników")+
+      ylab("Liczba osób")
+  })
+  output$Srednia_dl_podrozy <- renderPlot({
+    czas_wypozyczenia <- read_csv("czas_wypozyczenia.csv")
+    ggplot(data=czas_wypozyczenia, aes(x= reorder(`miesiac`, c(1:12)), y=`srednia_dl`, fill = srednia_dl)) +
+      geom_bar(stat="identity")+
+      scale_fill_continuous(type = "gradient", low = "#00004d",
+                            high = "#cc99ff",)+
+      scale_x_discrete(labels=c("STY", "LUT", "MAR", "KWI", "MAJ", "CZE", "LIP", "SIE", "WRZ", "PAZ", "LIS", "GRU"))+
+      xlab("")+
+      ylab("Średnia długość podróży [min]")+
+      ggtitle("Średnia długość podróży w poszczególnych miesiącach")+
+      theme(legend.position = "none")
+  })
+  output$ruch_weekendy <- renderPlot({
+    weekend_vs_zwykly <- read_csv("weekend_vs_zwykly.csv")
+    
+    ggplot(weekend_vs_zwykly, aes(x=as.Date(tydzien), y=srednia, group=weekend, colour=weekend)) +
+      geom_point()+
+      geom_line(size = 1)+
+      ggtitle("Średnia ilość wypożyczeń w ciągu dnia w kolejnych tygodniach")+
+      scale_colour_brewer(palette = "Set1", name = "", labels = c("Dni powszednie", "Weekendy") )+
+      ylab("Ilość wypożyczeń [szt]")+
+      xlab("")
+  })
+  output$ruch_godzinowo <- renderPlot({
+    weekend_godzinowo <- read_csv("Weekend_godzinowo.csv")
+    
+    if( !("Młodzież i studenci" %in% input$stud)){
+      weekend_godzinowo <- weekend_godzinowo[weekend_godzinowo$student == "FALSE",]
+    }
+    if( !("Pozostali użytkownicy" %in% input$stud)){
+      weekend_godzinowo <- weekend_godzinowo[weekend_godzinowo$student == "TRUE",]
+    }
+    if( !("Subscribers" %in% input$typ)){
+      weekend_godzinowo <- weekend_godzinowo[weekend_godzinowo$usertype != "Subscriber",]
+    }
+    if( !("Customers" %in% input$typ)){
+      weekend_godzinowo <- weekend_godzinowo[weekend_godzinowo$usertype != "Customer",]
+    }
+    
+    ggplot(weekend_godzinowo, aes(x=godzina, y=liczba_tras, group=weekend, color = weekend, )) +
+      geom_col(stat = "identity", alpha = 0.0)+
+      ggtitle("Godziny wypożyczeń")+
+      scale_colour_manual(values = c("magenta", "orange"), name = "", labels = c("Dni powszednie", "Weekendy"))+
+      ylab("Ilość wypożyczeń [szt]")+
+      xlab("")
+    
+    
+  })
+  
+  
 }
 
 shinyApp(ui = ui, server = server)
