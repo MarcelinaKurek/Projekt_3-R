@@ -68,9 +68,9 @@ ui <- fluidPage(
                         sidebarPanel(
                         ),
                         mainPanel(
-                          plotOutput("stacje", width = "100%"),
-                          plotOutput("rano"),
-                          plotOutput("wieczor")
+                          imageOutput("stacje"),
+                          imageOutput("rano"),
+                          imageOutput("wieczor")
                         )
                       )),
              tabPanel("Weekendy czy dni powszednie?",
@@ -97,7 +97,7 @@ ui <- fluidPage(
                       sidebarLayout(
                         sidebarPanel(),
                         mainPanel(
-                          plotOutput("turysci")
+                          imageOutput("turysci")
                         )
                       ))
   )
@@ -110,10 +110,6 @@ server <- function(input, output) {
   library(readr)
   library(ggplot2)
   
-  register_google(key = "AIzaSyD5TKwSQOohTjM8V1p2taClynMVSwp6Z1Y", write = TRUE)
-  nyc <- c(lon = -74.0059, lat = 40.74)
-  nyc_map <- get_map(nyc, zoom = 12, scale = 4)
-  map <- ggmap(nyc_map, extent = "device")
   
   output$favorite_routes <- renderPlot({
    # Routes <- data.table(read_csv("przeliczone_dane/routes_to_plot.csv"))
@@ -193,38 +189,25 @@ server <- function(input, output) {
       ggtitle("Liczba podróży danej długości(czerwiec - wrzesień)")
   })
   
-  output$stacje <- renderPlot({
-    busyStations <- read_csv("przeliczone_dane/busy_stations.csv")
-    
-    map + geom_point(data= busyStations, aes(x=longitude, y=latitude, color=N), alpha=0.5, size = 4) + 
-      scale_size() +
-      scale_color_gradient(low = "pink", high = "purple") +
-      ggtitle("Zagęszczenie ruchu na stacjach") + 
-      theme(plot.title = element_text(face = "bold", size = 18) ,legend.title = element_text("Liczba wypożyczonych rowerów na stacji")) +
-      coord_equal(ratio=1)
-  }
+  output$stacje <- renderImage({
+    list(src = "zageszczenie_ruchu_ogolnie.png")
+    }, 
+    deleteFile = FALSE
   )
   
-  output$rano <- renderPlot({
-    morning <- read_csv("przeliczone_dane/end_stations_morning.csv")
-    map + geom_point(data = morning, aes(x=longitude, y=latitude, color=N),alpha=0.5, size = 4) + 
-      scale_size(range=c(.1, 10)) +
-      scale_color_gradient(low="orange", high="blue") +
-      ggtitle("Stacje docelowe rano (7 - 10, pon - pt)") +
-      theme(legend.title = element_text("Liczba zwrotów rowerów na stacji"), plot.title = element_text(face = "bold", size = 18, margin = margin(30,0,5,0))) + 
-      coord_equal(ratio=1)
+  output$rano <- renderImage({
     
-  })
-  output$wieczor <- renderPlot({
-    evening <- read_csv("przeliczone_dane/end_stations_evening.csv")
-    map + geom_point(data = evening, aes(x=longitude, y=latitude, color=N),alpha=0.5, size = 4) + 
-      scale_size(range=c(.1, 10)) +
-      scale_color_gradient(low="orange", high="blue") +
-      ggtitle("Stacje docelowe wieczorem (16 - 19, pon - pt)") +
-      theme(legend.title = element_text("Liczba zwrotów rowerów na stacji"), plot.title = element_text(face = "bold", size = 18, margin = margin(30,0,5,0))) +
-      coord_equal(ratio=1)
-    
-  })
+    list(src = "plots/zageszczenie_ruchu_rano.png")
+  }, 
+    deleteFile = FALSE
+  )
+  
+  output$wieczor <- renderImage({
+    list(src = "plots/zageszczenie_ruchu_wieczor.png")
+  }, 
+  deleteFile = FALSE
+  )
+  
   output$Wypozyczone_rowery <- renderPlot({
     ruch <- read_csv("ruch.csv")
     ggplot(ruch, aes(x = reorder(`miesiace`, c(1:12)), y = liczba_rowerow, fill = liczba_rowerow))+
@@ -311,18 +294,10 @@ server <- function(input, output) {
       scale_colour_manual(values = c("magenta", "orange"), name = "", labels = c("Dni powszednie", "Weekendy"))+
       ylab("Ilość wypożyczeń [szt]")+
       xlab("")
-    
-    
   })
   
-  output$turysci <- renderPlot({
-    Tourists <- data.table(read.csv("przeliczone_dane/polygon_tourists_map.csv"))
+  output$turysci <- renderImage({
     
-    setnames(Tourists, old = c("end.station.latitude", "end.station.longitude"), new = c("latitude", "longitude"))
-    
-    map + stat_density2d(aes(x = longitude, y = latitude, fill = ..level..), alpha = 0.7,
-                         size = 2, bins = 4, data = Tourists ,geom = "polygon") +
-      scale_fill_viridis_c(direction = -1) 
   })
   
   
