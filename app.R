@@ -1,13 +1,16 @@
 library(shiny)
 library(shinythemes)
 library(data.table)
+library(ggmap)
+library(xml2)
+library("png")
 
 ui <- fluidPage(
   includeCSS("styles.css"),
   navbarPage("Analiza danych NYC Bike Share", header=tags$head(includeCSS("styles.css")) ,
              tabPanel("Ogólne",
                       sidebarLayout(
-                        sidebarPanel(),
+                        sidebarPanel(h2("Informacje ogólne"), width = 0),
                         mainPanel(
                           h2("Liczba wypożyczeń w ciągu roku - 20.551.697"),
                           h2("Liczba wszystkich używanych rówerów - 19.571"),
@@ -34,7 +37,7 @@ ui <- fluidPage(
              tabPanel("Kto więcej wypożycza?",
                       sidebarLayout(
                         sidebarPanel(
-                         p("Zauważamy, że znacznie częściej z rowerów korzystają osoby z roczną subskrypcją."),
+                         
                          checkboxGroupInput(inputId = "plec", label = "Wybierz płeć użytkownika", 
                                             choices = c("Brak danych", "Mężczyzna", "Kobieta"), selected = c("Brak danych", "Mężczyzna", "Kobieta")),
                          checkboxGroupInput(inputId = "sub", label = "Wybierz typ subskrypcji",
@@ -65,7 +68,7 @@ ui <- fluidPage(
                         sidebarPanel(
                         ),
                         mainPanel(
-                          plotOutput("stacje"),
+                          plotOutput("stacje", width = "100%"),
                           plotOutput("rano"),
                           plotOutput("wieczor")
                         )
@@ -89,7 +92,14 @@ ui <- fluidPage(
                         )
                       )
                       
-             )
+             ),
+             tabPanel("Miejsca turystyczne",
+                      sidebarLayout(
+                        sidebarPanel(),
+                        mainPanel(
+                          plotOutput("turysci")
+                        )
+                      ))
   )
   
 )
@@ -100,6 +110,10 @@ server <- function(input, output) {
   library(readr)
   library(ggplot2)
   
+  register_google(key = "AIzaSyD5TKwSQOohTjM8V1p2taClynMVSwp6Z1Y", write = TRUE)
+  nyc <- c(lon = -74.0059, lat = 40.74)
+  nyc_map <- get_map(nyc, zoom = 12, scale = 4)
+  map <- ggmap(nyc_map, extent = "device")
   
   output$favorite_routes <- renderPlot({
    # Routes <- data.table(read_csv("przeliczone_dane/routes_to_plot.csv"))
@@ -118,7 +132,10 @@ server <- function(input, output) {
       scale_fill_manual(values=c("#6a040f", "#e85d04")) +
       theme(legend.position = "none") +
       xlab("Typ użytkownika") +
-      ggtitle("Liczba wypożyczeń z uwagi na typ użytkownika w skali roku")
+      ggtitle("Liczba wypożyczeń z uwagi na typ użytkownika w skali roku") +
+      theme(plot.title =element_text(size = 18, face  ="bold", margin = margin(10,0,10,0)), 
+            axis.text.x = element_text(size = 14, vjust = 0.5),
+            axis.title = element_text(size = 15, face = "bold", color = "#03071e"))
   
   })
   
@@ -167,7 +184,6 @@ server <- function(input, output) {
   })
   
   output$barPlotDlPodrozy <- renderPlot({
-    
     dane <- read.csv("ile_podrozy_okreslonej_dl.csv")
     ggplot(data=dane,aes(x = `typ.podrozy`, y = N, fill = as.factor(N))) +
       geom_bar(stat="identity", width = 0.4) +
@@ -178,33 +194,35 @@ server <- function(input, output) {
   })
   
   output$stacje <- renderPlot({
-    busyStations <- read_csv("busy_stations.csv")
-    ggplot(busyStations, aes(x=longitude, y=latitude, color=N)) + 
-      geom_point(alpha=0.3, size = 4) + 
-      scale_size(range=c(.1, 10)) +
+    busyStations <- read_csv("przeliczone_dane/busy_stations.csv")
+    
+    map + geom_point(data= busyStations, aes(x=longitude, y=latitude, color=N), alpha=0.5, size = 4) + 
+      scale_size() +
       scale_color_gradient(low = "pink", high = "purple") +
       ggtitle("Zagęszczenie ruchu na stacjach") + 
-      theme(legend.title = element_text("Liczba wypożyczonych rowerów na stacji"))
-  })
+      theme(plot.title = element_text(face = "bold", size = 18) ,legend.title = element_text("Liczba wypożyczonych rowerów na stacji")) +
+      coord_equal(ratio=1)
+  }
+  )
   
   output$rano <- renderPlot({
-    morning <- read_csv("end_stations_morning.csv")
-    ggplot(morning, aes(x=longitude, y=latitude, color=N)) + 
-      geom_point(alpha=0.4, size = 4) + 
+    morning <- read_csv("przeliczone_dane/end_stations_morning.csv")
+    map + geom_point(data = morning, aes(x=longitude, y=latitude, color=N),alpha=0.5, size = 4) + 
       scale_size(range=c(.1, 10)) +
       scale_color_gradient(low="orange", high="blue") +
       ggtitle("Stacje docelowe rano (7 - 10, pon - pt)") +
-      theme(legend.title = element_text("Liczba zwrotów rowerów na stacji"))
+      theme(legend.title = element_text("Liczba zwrotów rowerów na stacji"), plot.title = element_text(face = "bold", size = 18, margin = margin(30,0,5,0))) + 
+      coord_equal(ratio=1)
     
   })
   output$wieczor <- renderPlot({
-    evening <- read_csv("end_stations_evening.csv")
-    ggplot(evening, aes(x=longitude, y=latitude, color=N)) + 
-      geom_point(alpha=0.3, size = 4) + 
+    evening <- read_csv("przeliczone_dane/end_stations_evening.csv")
+    map + geom_point(data = evening, aes(x=longitude, y=latitude, color=N),alpha=0.5, size = 4) + 
       scale_size(range=c(.1, 10)) +
       scale_color_gradient(low="orange", high="blue") +
       ggtitle("Stacje docelowe wieczorem (16 - 19, pon - pt)") +
-      theme(legend.title = element_text("Liczba zwrotów rowerów na stacji"))
+      theme(legend.title = element_text("Liczba zwrotów rowerów na stacji"), plot.title = element_text(face = "bold", size = 18, margin = margin(30,0,5,0))) +
+      coord_equal(ratio=1)
     
   })
   output$Wypozyczone_rowery <- renderPlot({
@@ -245,7 +263,8 @@ server <- function(input, output) {
                 color="white", size=3.5)+
       scale_fill_manual(values = paleta, name = "Płeć", labels = c(input$plec) )+
       ggtitle("Chrarakterystyka użytkowników")+
-      ylab("Liczba osób")
+      ylab("Liczba osób") + 
+      theme(plot.title =element_text(size = 18, face  ="bold", margin = margin(10,0,10,0)))
   })
   output$Srednia_dl_podrozy <- renderPlot({
     czas_wypozyczenia <- read_csv("czas_wypozyczenia.csv")
@@ -294,6 +313,16 @@ server <- function(input, output) {
       xlab("")
     
     
+  })
+  
+  output$turysci <- renderPlot({
+    Tourists <- data.table(read.csv("przeliczone_dane/polygon_tourists_map.csv"))
+    
+    setnames(Tourists, old = c("end.station.latitude", "end.station.longitude"), new = c("latitude", "longitude"))
+    
+    map + stat_density2d(aes(x = longitude, y = latitude, fill = ..level..), alpha = 0.7,
+                         size = 2, bins = 4, data = Tourists ,geom = "polygon") +
+      scale_fill_viridis_c(direction = -1) 
   })
   
   

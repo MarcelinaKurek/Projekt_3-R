@@ -144,6 +144,7 @@ for ( i in 7:9) {
                                           c("start station latitude", "start station longitude", 
                                             "end station latitude", "end station longitude")], use.names = FALSE)
 }
+fwrite(tourists, "polygon_tourists_map.csv")
 tourists_places <- tourists[,.N, by = c("end station latitude", "end station longitude")]
 tourists_places <- tourists_places[order(by = N, decreasing = TRUE)]
 fwrite(tourists_places, "tourists_places.csv")
@@ -312,3 +313,5 @@ Weekend_godzinowo <- Weekend_godzinowo[, .(godzina, data = as.integer(ceiling((d
 Weekend_godzinowo[, 1:3] <- NULL
 Weekend_godzinowo <- Weekend_godzinowo[, .(godzina, data = d1 + 7*data, weekend, liczba_tras)]
 Weekend_godzinowo <- distinct(Weekend_godzinowo)
+
+Tourists <- data.table(read.csv("przeliczone_dane/tourists_places.csv"))

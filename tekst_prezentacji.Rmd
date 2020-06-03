@@ -24,6 +24,8 @@ Zakładając, że większość customers to turyści. Możemy powiedzieć, że t
 Biorąc pod uwagę to, że Nowy Jork odwiedziło w roku 2019 ponad 65 mln turystów zauważamy, że tylko 4.5% tyrustów korzysta z roweru w trakcie swojego pobytu w Nowym Jorku.
 Podsumowując głównymi użytkownikami rowerów miejskich są mieszkańcy Nowego Jorku.
 
+
+
 ## Długość podróży
 Obserwujemy, że długość podróży jest uwarunkowana porą dnia.
 Ludzie używają rowerów do bardzo krótkich przejażdżek głównie w godzinach 9-10 oraz 18-19.
@@ -31,4 +33,16 @@ Podobnie jest z podróżami 15 - 30 min, z tą różnicą, że większe natęże
 Na średniej długości przejażdżki, jeździ się głównie 17 - 19.
 Długie przejażdzki wybierane są rzadko, możliwe, że ze względu na dodatkowe opłaty z tym związane.( Dla osób korzystających całorocznie, darmowe są przejażdżki do 45 min. Potem trzeba dopłacać za dodatkowe minuty.)
 Najczęściej na długie przejażdżki jeżdzi się od 12 do 19.
+
+## Zagęszczenie ruchu na stacjach
+Stacje rowerowe znajdują się na Manhattanie oraz w Brooklynie
+Njbardziej używane stacje znajdują się w fioletowym obszarze.
+Rano jak i wieczorem bardzo oblegany jest Grand Central Terminal
+
+
+## Turyści
+
+Turyści chętnie oglądają World Trace Center.
+Dużym powodzeniem cieszy się też Chelsea Market
+Często jeżdzą do Cenral Parku.
 
