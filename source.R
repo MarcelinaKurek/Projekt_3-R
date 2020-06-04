@@ -136,6 +136,7 @@ end_stations_indices_sorted_byN$`end station id` <- as.character(end_stations_in
 end_stations <- merge(end_stations_indices_sorted_byN,stations, by.x = "end station id", by.y = "id",all.x = TRUE)
 
 fwrite(end_stations, file="end_stations_evening.csv")
+
 ## ---- gdzie jeżdzą turyści ----
 tourists <- june[usertype=="Customer", c("start station latitude", "start station longitude", 
                                          "end station latitude", "end station longitude")]
@@ -144,31 +145,26 @@ for ( i in 7:9) {
                                           c("start station latitude", "start station longitude", 
                                             "end station latitude", "end station longitude")], use.names = FALSE)
 }
-fwrite(tourists, "polygon_tourists_map.csv")
+fwrite(tourists[, c("end station latitude", "end station longitude")], "polygon_tourists_map.csv")
 tourists_places <- tourists[,.N, by = c("end station latitude", "end station longitude")]
 tourists_places <- tourists_places[order(by = N, decreasing = TRUE)]
 fwrite(tourists_places, "tourists_places.csv")
+
+
 ## ---- TRASY osoby 7 - 18 lat - uczniowie pon - pt ----
 students_months <- april
 students_months <- rbind(students_months, may, september, use.names = FALSE)
 students_routes <- students_months[(2019 - `birth year`) <= 18 & (2019 - `birth year`) >= 7 &
-                         Weekday%in% c("poniedziałek", "wtorek", "środa", "czwartek", "piątek"),
-                       c("start station latitude", "start station longitude", "end station latitude", "end station longitude")]
-students_routes_grouped <- students_routes[, .N, by = list(`start station longitude`, `start station latitude`, 
-                                                           `end station longitude`, `end station latitude`)]
+                         Weekday%in% c("poniedziałek", "wtorek", "środa", "czwartek", "piątek") & 
+                         hour(stoptime) >= 7 & hour(stoptime) <= 10,
+                       c("end station latitude", "end station longitude")]
+students_routes_grouped <- students_routes[, .N, by = list(`end station longitude`, `end station latitude`)]
 students_routes_grouped <- students_routes_grouped[(order(by = N, decreasing = TRUE))]
 fwrite(students_routes_grouped, "student_routes.csv")
 ## ---- najczęściej wybierana trasa  ogólnie ----
-routes <- data.table(january)
+routes <- data.table(june)
+routes <- rbind(routes, july, august, september, use.names = FALSE)
 routes <- routes[, .N , by = list(`start station id`, `end station id`)]
-routes <- routes[, month:= 1]
-for(i in 2:12) {
-  temporary <- months[[i]][, .N , by = list(`start station id`, `end station id`)]
-  temporary$`start station id` <- as.double(temporary$`start station id`)
-  temporary$`end station id` <- as.double(temporary$`end station id`) 
-  temporary <- temporary[, month := i]
-  routes <- rbind(routes, temporary, use.names=FALSE)
-}
 stations$id <- as.double(stations$id)
 
 # szerokość i dł. geog. stacji początkowej

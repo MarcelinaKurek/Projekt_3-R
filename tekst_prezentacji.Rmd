@@ -46,3 +46,7 @@ Turyści chętnie oglądają World Trace Center.
 Dużym powodzeniem cieszy się też Chelsea Market
 Często jeżdzą do Cenral Parku.
 
+## Szkoły
+
+Niewiele uczniów jeździ do szkoły rowerem.
+Widzimy że szkoły z większą liczbą uczniów znajdują się raczej w centrum.
