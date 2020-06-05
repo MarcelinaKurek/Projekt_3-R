@@ -295,20 +295,11 @@ fwrite(Weekend_vs_zwykly, "Weekend_vs_zwykly.csv")
 
 
 ##Porównanie godzin wypożyczeń dla weekendów i dni powszednich (z uwzględnieniem subskrypcji i częściowym uwzględnieniem wieku)
-d1 <- as.Date("2018-12-31")
-Weekend_godzinowo <- wszystko[, .("godzina" = hour(starttime), "data" = as.Date(starttime), weekend = (Weekday == "sobota" | Weekday == "niedziela" ), 
-                                  usertype, student= (`birth year` >= 1993))]
-Weekend_godzinowo <- Weekend_godzinowo[, .(godzina, data = as.integer(ceiling((data - d1)/7)) , "weekend" = as.character(weekend), "liczba_tras" = .N, 
-                                           usertype, student = as.character(student)), by = c("godzina", "weekend", "data", "usertype", "student") ][order(godzina)]
+Weekend_godzinowo <- wszystko[, .("godzina" = hour(starttime), "month" = month(as.Date(starttime)), weekend = (Weekday == "sobota" | Weekday == "niedziela" ), usertype, student= (`birth year` >= 1993))]
+Weekend_godzinowo <- Weekend_godzinowo[, .(godzina, month, "weekend" = as.character(weekend), "liczba_tras" = .N, usertype, student = as.character(student)), by = c("godzina", "weekend", "month", "usertype", "student") ][order(godzina)]
 Weekend_godzinowo[, 1:5] <- NULL
-Weekend_godzinowo <- Weekend_godzinowo[, .(godzina, weekend, liczba_tras, usertype, student)]
+Weekend_godzinowo <- Weekend_godzinowo[, .(godzina, month, weekend, liczba_tras, usertype, student)]
 Weekend_godzinowo <- distinct(Weekend_godzinowo)
 fwrite(Weekend_godzinowo, "Weekend_godzinowo.csv")
 
-##Porównanie weekendu godzinowo bez uwzględniania wieku i typu subskrypcji (ot prostsza wersja)
-d1 <- as.Date("2018-12-31")
-Weekend_godzinowo <- wszystko[, .("godzina" = hour(starttime), "data" = as.Date(starttime), weekend = (Weekday == "sobota" | Weekday == "niedziela" ))]
-Weekend_godzinowo <- Weekend_godzinowo[, .(godzina, data = as.integer(ceiling((data - d1)/7)) , "weekend" = as.character(weekend), "liczba_tras" = .N), by = c("godzina", "weekend", "data") ][order(godzina)]
-Weekend_godzinowo[, 1:3] <- NULL
-Weekend_godzinowo <- Weekend_godzinowo[, .(godzina, data = d1 + 7*data, weekend, liczba_tras)]
-Weekend_godzinowo <- distinct(Weekend_godzinowo)
+

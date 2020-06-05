@@ -15,6 +15,7 @@ W ciagu roku 2019 było aż 20.5 mln wypożyczeń.
 Z tego wynika, że średnio na jednego mieszkańca Nowego Jorku przypadają tylko 2.4 wypożyczenia roweru rocznie.
 Łącznie wszystkich rowerów było około 20 tys.
 Wszystkich stacji jest około 1000.
+Najwięcej wypożyczeń było w sierpniu i wrześniu, ok 50 000 łącznie w każdym z tych miesięcy. Najmniej wypożyczeń przypadło na miesiące zimowe - grudzień, styczeń oraz luty - ok 20 000. Średnia liczba wypożyczanych rowerów w miesiącu wyniosła 33 446 rowerów.
 
 ## Najczęstsze trasy
 Nowojorczycy najczęściej obierają trasy
@@ -23,6 +24,7 @@ Nowojorczycy najczęściej obierają trasy
 Zakładając, że większość customers to turyści. Możemy powiedzieć, że turyści stanowią 14% wszystkich wypożyczeń.
 Biorąc pod uwagę to, że Nowy Jork odwiedziło w roku 2019 ponad 65 mln turystów zauważamy, że tylko 4.5% tyrustów korzysta z roweru w trakcie swojego pobytu w Nowym Jorku.
 Podsumowując głównymi użytkownikami rowerów miejskich są mieszkańcy Nowego Jorku.
+Zauważmy, że w skrukturze wiekowej użytkownikóW zdecydowanie przeważają mężczyźni. Najliczniejsza grupa użytkowników to osoby urodzone w latach 1985 - 1990. Z kolei wśród turystów głównymi użytkownikami są osoby urodzone po 1990r. Szczególnym rokiem był rok 1969, w którym odnotowano największą ilość użytkownikóW w większości z brakiem danych na temat płci.
 
 ## Długość podróży
 Obserwujemy, że długość podróży jest uwarunkowana porą dnia.
@@ -31,4 +33,12 @@ Podobnie jest z podróżami 15 - 30 min, z tą różnicą, że większe natęże
 Na średniej długości przejażdżki, jeździ się głównie 17 - 19.
 Długie przejażdzki wybierane są rzadko, możliwe, że ze względu na dodatkowe opłaty z tym związane.( Dla osób korzystających całorocznie, darmowe są przejażdżki do 45 min. Potem trzeba dopłacać za dodatkowe minuty.)
 Najczęściej na długie przejażdżki jeżdzi się od 12 do 19.
+Średnia długość podróży w miesiącu znajduje się w przedziale 7 - 17 min z najdłuższymi podróżami w czerwcu i najkrótszymi w styczniu. Wyraźnie jest widoczna różnica między przediałami miesięcy maj - wrzesień oraz paźdzernik - marzec.
+
+## Weekend vs dzień zwykły
+W niemal każdym tygodniu roku 2019 dzienna liczba wypożyczeń w dzień powszedni przewyższała liczbę wypożyczeń w weekendy. Można przypuszczać, że rowery miejskie wykorzystywane są głównie jako jeden z etapów drogi do pracy lub na uczelnię.
+Godziny wypożyczeń w dni powszednie znacznie różnią się od godzin wypożyczeń w weekendy. Od poniedziałku do piątku szczyt wypożyczeń przypada na 8 rano oraz 17-18 po południu. W przypadku weekendów ilość wypożyczeń w godzinach 10-18 jest zbliżona.
+Porównując miesiące wakacjne i pozostałe, można zaobserwować subtelne różnice między godzinami wypożyczeń, np większy odsetek podróży w godzinach wieczornych. 
+Biorąc pod uwagę podróże turystów i mieszkańców, w podróżach turystów różnica między ilością podróży w godzinach szczytu i poza nimi jest mniejsza.
+Studenci chętniej wypożyczają rowwery w godzinach nocnych, przykładowo w weekendy odnotowano więcej wypożyczeń o północy niż o 7 rano.
 

@@ -56,8 +56,8 @@ ui <- fluidPage(
                         ),
                         mainPanel(
                           plotOutput("dlPodrozy", width = "100%"),
-                          plotOutput("barPlotDlPodrozy"),
-                          plotOutput("Srednia_dl_podrozy")
+                          plotOutput("barPlotDlPodrozy")
+                          #plotOutput("Srednia_dl_podrozy")
                         )
                       )),
              tabPanel("Zagęszczenie ruchu na stacjach",
@@ -72,8 +72,13 @@ ui <- fluidPage(
                       )),
              tabPanel("Weekendy czy dni powszednie?",
                       sidebarLayout(
+                        
                         sidebarPanel(
-                          checkboxGroupInput(inputId = "stud", label = "Wybierz co chcesz", 
+                          p("Profil użytkownika"),
+                          sliderInput("mies", "Miesiące", 
+                                      min = 1, max = 12, value = c(1,12)
+                          ),
+                          checkboxGroupInput(inputId = "stud", label = "Wybierz status użytkownika", 
                                              choices = c("Młodzież i studenci", "Pozostali użytkownicy"), selected = c("Młodzież i studenci", "Pozostali użytkownicy")
                           ),
                           checkboxGroupInput(inputId = "typ", label = "Wybierz typ subskrypcji",
@@ -99,6 +104,7 @@ server <- function(input, output) {
   library(data.table)
   library(readr)
   library(ggplot2)
+  library(gridExtra)
   
   
   output$favorite_routes <- renderPlot({
@@ -169,12 +175,25 @@ server <- function(input, output) {
   output$barPlotDlPodrozy <- renderPlot({
     
     dane <- read.csv("ile_podrozy_okreslonej_dl.csv")
-    ggplot(data=dane,aes(x = `typ.podrozy`, y = N, fill = as.factor(N))) +
+    plot_1 <- ggplot(data=dane,aes(x = `typ.podrozy`, y = N, fill = as.factor(N))) +
       geom_bar(stat="identity", width = 0.4) +
       scale_fill_manual(values=c("#05668d", "#028090", "#00a896", "#02c39a" )) +
       theme(legend.position = "none") +
       xlab("Typ podróży") +
       ggtitle("Liczba podróży danej długości(czerwiec - wrzesień)")
+    
+    czas_wypozyczenia <- read_csv("czas_wypozyczenia.csv")
+    plot_2 <- ggplot(data=czas_wypozyczenia, aes(x= reorder(`miesiac`, c(1:12)), y=`srednia_dl`, fill = srednia_dl)) +
+      geom_bar(stat="identity")+
+      scale_fill_continuous(type = "gradient", low = "#00004d",
+                            high = "#cc99ff",)+
+      scale_x_discrete(labels=c("STY", "LUT", "MAR", "KWI", "MAJ", "CZE", "LIP", "SIE", "WRZ", "PAZ", "LIS", "GRU"))+
+      xlab("")+
+      ylab("Średnia długość podróży [min]")+
+      ggtitle("Średnia długość podróży w poszczególnych miesiącach")+
+      theme(legend.position = "none")
+    
+    grid.arrange(plot_1, plot_2, ncol=2)
   })
   
   output$stacje <- renderPlot({
@@ -247,18 +266,9 @@ server <- function(input, output) {
       ggtitle("Chrarakterystyka użytkowników")+
       ylab("Liczba osób")
   })
-  output$Srednia_dl_podrozy <- renderPlot({
-    czas_wypozyczenia <- read_csv("czas_wypozyczenia.csv")
-    ggplot(data=czas_wypozyczenia, aes(x= reorder(`miesiac`, c(1:12)), y=`srednia_dl`, fill = srednia_dl)) +
-      geom_bar(stat="identity")+
-      scale_fill_continuous(type = "gradient", low = "#00004d",
-                            high = "#cc99ff",)+
-      scale_x_discrete(labels=c("STY", "LUT", "MAR", "KWI", "MAJ", "CZE", "LIP", "SIE", "WRZ", "PAZ", "LIS", "GRU"))+
-      xlab("")+
-      ylab("Średnia długość podróży [min]")+
-      ggtitle("Średnia długość podróży w poszczególnych miesiącach")+
-      theme(legend.position = "none")
-  })
+  
+  #output$Srednia_dl_podrozy <- renderPlot({
+  #})
   output$ruch_weekendy <- renderPlot({
     weekend_vs_zwykly <- read_csv("weekend_vs_zwykly.csv")
     
@@ -273,6 +283,9 @@ server <- function(input, output) {
   output$ruch_godzinowo <- renderPlot({
     weekend_godzinowo <- read_csv("Weekend_godzinowo.csv")
     
+    weekend_godzinowo <- weekend_godzinowo[weekend_godzinowo$month >= input$mies[1] & weekend_godzinowo$month <= max(input$mies), ]
+    
+    
     if( !("Młodzież i studenci" %in% input$stud)){
       weekend_godzinowo <- weekend_godzinowo[weekend_godzinowo$student == "FALSE",]
     }
@@ -286,12 +299,30 @@ server <- function(input, output) {
       weekend_godzinowo <- weekend_godzinowo[weekend_godzinowo$usertype != "Customer",]
     }
     
-    ggplot(weekend_godzinowo, aes(x=godzina, y=liczba_tras, group=weekend, color = weekend, )) +
-      geom_col(stat = "identity", alpha = 0.0)+
-      ggtitle("Godziny wypożyczeń")+
-      scale_colour_manual(values = c("magenta", "orange"), name = "", labels = c("Dni powszednie", "Weekendy"))+
+    test <- as.data.table(tapply(weekend_godzinowo$liczba_tras, list(weekend_godzinowo$godzina, weekend_godzinowo$weekend), FUN = sum))
+    test <- cbind(c(0:23), test)
+    colnames(test) <- c("godzina", "powszedni", "weekend")
+    
+    
+    plot1 <- ggplot(test, aes(x=godzina , y= powszedni, fill = powszedni)) +
+      geom_bar(stat = "identity", alpha = 1, width = 0.7, position = position_dodge(width = 0.8))+
+      ggtitle("Godziny wypożyczeń w dni powszednie")+
+      scale_fill_continuous(low = "#001782", high = "#989898")+
+      #scale_fill_manual(name = "", labels = c("Dni powszednie", "Weekendy"))+
       ylab("Ilość wypożyczeń [szt]")+
       xlab("")
+    
+    
+    plot2 <- ggplot(test, aes(x=godzina , y= weekend, fill = weekend)) +
+      geom_bar(stat = "identity", alpha = 1, width = 0.7, position = position_dodge(width = 0.8))+
+      ggtitle("Godziny wypożyczeń w weekendy")+
+      scale_fill_continuous(low = "#800000", high = "#009c0d")+
+      #scale_fill_manual(name = "", labels = c("Dni powszednie", "Weekendy"))+
+      ylab("Ilość wypożyczeń [szt]")+
+      xlab("")
+    
+    grid.arrange(plot1, plot2, ncol=2)
+    
     
     
   })
