@@ -4,7 +4,7 @@ library(ggmap)
 ## generowanie wykresów
 
 ## Wczytanie mapy ----
-register_google(key = "AIzaSyD5TKwSQOohTjM8V1p2taClynMVSwp6Z1Y", write = TRUE)
+register_google(key = "API_KEY", write = TRUE)
 nyc <- c(lon = -74.0059, lat = 40.74)
 nyc_map <- get_map(nyc, zoom = 12, scale = 4)
 map <- ggmap(nyc_map, extent = "device")
