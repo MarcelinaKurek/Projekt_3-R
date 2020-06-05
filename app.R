@@ -22,15 +22,6 @@ ui <- fluidPage(
                         )
                         )
                       ),
-             tabPanel("Najczęstsze trasy",
-                      sidebarLayout(
-                        sidebarPanel()
-                        ),
-                        mainPanel(
-                          plotOutput("favorite_routes")
-                        )
-                      )
-             ),
              tabPanel("Kto więcej wypożycza?",
                       sidebarLayout(
                         sidebarPanel(
@@ -43,7 +34,7 @@ ui <- fluidPage(
                         mainPanel(
                           plotOutput("sub_vs_cust"),
                           plotOutput("age_and_gender")
-                        ),
+                        )
                         
                       )
              ),
@@ -68,16 +59,22 @@ ui <- fluidPage(
                           imageOutput("stacje")
                         )
                       )),
-             tabPanel("Dojazdy i powroty z pracy",
+             tabPanel("Dojazdy do pracy",
                       sidebarLayout(
                         sidebarPanel(
                         ),
                         mainPanel(
-                          imageOutput("rano"),
-                          br(),
-                          imageOutput("wieczor")
+                          imageOutput("rano")
                         )
                       )),
+              tabPanel("Powroty z pracy",
+                       sidebarLayout(
+                         sidebarPanel(
+                         ),
+                         mainPanel(
+                           imageOutput("wieczor")
+                         )
+                       )),
              tabPanel("Weekendy czy dni powszednie?",
                       sidebarLayout(
                         sidebarPanel(
@@ -112,9 +109,9 @@ ui <- fluidPage(
                           imageOutput("studenci")
                         )
                       ))
-  )
+  ))
   
-)
+
 
 
 server <- function(input, output) {
@@ -123,15 +120,8 @@ server <- function(input, output) {
   library(ggplot2)
   
   
-  output$favorite_routes <- renderPlot({
-   Routes <- data.table(read_csv("przeliczone_dane/routes_to_plot.csv"))
-    routes_to_plot2 <- Routes[1:100,ID := .I]
-    routes_to_plot2 <- rbind(routes_to_plot2[,c("start latitude", "start longitude", "ID")],
-                            routes_to_plot2[,c("end latitude", "end longitude", "ID")], use.names=FALSE)
-    ggplot(routes_to_plot2[,c("start latitude", "start longitude", "ID")], aes(x=`start longitude`, y=`start latitude`, group=ID)) +
-     geom_point(size=2, color="black") +
-     geom_line(color="red")
-  })
+  #output$favorite_routes <- renderPlot({
+  #})
   
   output$sub_vs_cust <- renderPlot({
     df <- read_csv(file = "przeliczone_dane/sub_vs_customers.csv")

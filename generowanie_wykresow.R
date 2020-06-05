@@ -4,21 +4,10 @@ library(ggmap)
 ## generowanie wykresów
 
 ## Wczytanie mapy ----
-register_google(key = "API_KEY", write = TRUE)
+register_google(key = "AIzaSyD5TKwSQOohTjM8V1p2taClynMVSwp6Z1Y", write = TRUE)
 nyc <- c(lon = -74.0059, lat = 40.74)
 nyc_map <- get_map(nyc, zoom = 12, scale = 4)
 map <- ggmap(nyc_map, extent = "device")
-
-## Najczęstsze trasy ----
-
-Routes <- data.table(read_csv("przeliczone_dane/routes_to_plot.csv"))
-routes_to_plot2 <- Routes[1:100,ID := .I]
-routes_to_plot2 <- rbind(routes_to_plot2[,c("start latitude", "start longitude", "ID")],
-                         routes_to_plot2[,c("end latitude", "end longitude", "ID")], use.names=FALSE)
-ggplot(routes_to_plot2[,c("start latitude", "start longitude", "ID")], aes(x=`start longitude`, y=`start latitude`, group=ID)) +
-  geom_point(size=2, color="black") +
-  geom_line(color="red")
-
 
 ## Zagęszczenie ruchu ----
 ## Ogólnie ----

@@ -178,7 +178,8 @@ routes <- merge.data.table(routes, stations, by.x = "end station id", by.y = "id
 newnames <- c("end latitude", "end longitude")
 setnames(routes, old = oldnames, new=newnames, skip_absent = TRUE)
 
-fwrite(routes[, c("N" ,"start latitude", "start longitude", "end latitude", "end longitude", "month")], "routes_to_plot.csv")
+routes <- routes[order(N, decreasing = TRUE)]
+fwrite(routes[1:100, ], "routes_to_plot.csv")
 
 ## ---- obserwacje ruchu na podstawie godzin( w których godzinach są krótkie trasy a w których długie) ----
 hours_observations <- data.table(june[,c("starttime", "tripduration")])
@@ -215,42 +216,6 @@ tripduration_over_hours <- data.table(hour = c(1:24), `0-15min` = duration_0_15m
                                       `30-45min` = duration_30_45min_grouped, `over 45min`=duration_over_45min_grouped)
 fwrite(tripduration_over_hours, file = "tripduration_over_hours.csv")
 
-## ---- Sprawdzenie czy ludzie jeżdżą w parach ----
-group_trips <-june
-group_trips <- rbind(group_trips, july, august, use.names = FALSE)
-group_trips <- group_trips[order(starttime),list(`starttime`,`start station id`, `end station id`)]
-result_tab <- data.table(NULL)
-len <- dim(group_trips)[1]
-howmany <- 2
-for (i in 1:(len-1)) {
-  iter <- 1
-  for (j in (i+1):len) {
-    if (units.difftime(ymd_hms(group_trips$starttime[j]) - ymd_hms(group_trips$starttime[i])) == "secs") {
-      minutes <- 0
-    }
-    else {
-      minutes <- as.numeric(ymd_hms(group_trips$starttime[j]) - ymd_hms(group_trips$starttime[i]))
-    }
-    
-    if (minutes < 4) {
-      if (group_trips$`start station id`[i] == group_trips$`start station id`[j] & group_trips$`end station id`[i] == group_trips$`end station id`[j]){
-        if (iter == 1) {
-          row <- cbind(group_trips[i], howmany)
-          result_tab <- rbind(result_tab, row)
-        }
-        else {
-          result_tab$howmany[dim(result_tab)[1]] <- result_tab$howmany[dim(result_tab)[1]] + 1
-        }
-        iter <- iter + 1
-      }
-    }
-    else if(minutes >= 4){
-        break;
-      }
-    }
-  }
-
-fwrite(result_tab, "group_trips.csv")
 
 ## ---- Najdłużssze wypożyczenia ----
 # 
