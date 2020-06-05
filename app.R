@@ -1,13 +1,16 @@
 library(shiny)
 library(shinythemes)
 library(data.table)
+library(ggmap)
+library(xml2)
+library("png")
 
 ui <- fluidPage(
   includeCSS("styles.css"),
   navbarPage("Analiza danych NYC Bike Share", header=tags$head(includeCSS("styles.css")) ,
              tabPanel("Ogólne",
                       sidebarLayout(
-                        sidebarPanel(),
+                        sidebarPanel(h2("Informacje ogólne"), width = 0),
                         mainPanel(
                           h2("Liczba wypożyczeń w ciągu roku - 20.551.697"),
                           h2("Liczba wszystkich używanych rówerów - 19.571"),
@@ -19,22 +22,10 @@ ui <- fluidPage(
                         )
                         )
                       ),
-             tabPanel("Najczęstsze trasy",
-                      sidebarLayout(
-                        sidebarPanel(
-                          sliderInput("okres", "Miesiące", 
-                                      min = 1, max = 12, value = c(1,12)
-                          )
-                        ),
-                        mainPanel(
-                          plotOutput("favorite_routes")
-                        )
-                      )
-             ),
              tabPanel("Kto więcej wypożycza?",
                       sidebarLayout(
                         sidebarPanel(
-                         p("Zauważamy, że znacznie częściej z rowerów korzystają osoby z roczną subskrypcją."),
+                         
                          checkboxGroupInput(inputId = "plec", label = "Wybierz płeć użytkownika", 
                                             choices = c("Brak danych", "Mężczyzna", "Kobieta"), selected = c("Brak danych", "Mężczyzna", "Kobieta")),
                          checkboxGroupInput(inputId = "sub", label = "Wybierz typ subskrypcji",
@@ -43,7 +34,7 @@ ui <- fluidPage(
                         mainPanel(
                           plotOutput("sub_vs_cust"),
                           plotOutput("age_and_gender")
-                        ),
+                        )
                         
                       )
              ),
@@ -65,11 +56,25 @@ ui <- fluidPage(
                         sidebarPanel(
                         ),
                         mainPanel(
-                          plotOutput("stacje"),
-                          plotOutput("rano"),
-                          plotOutput("wieczor")
+                          imageOutput("stacje")
                         )
                       )),
+             tabPanel("Dojazdy do pracy",
+                      sidebarLayout(
+                        sidebarPanel(
+                        ),
+                        mainPanel(
+                          imageOutput("rano")
+                        )
+                      )),
+              tabPanel("Powroty z pracy",
+                       sidebarLayout(
+                         sidebarPanel(
+                         ),
+                         mainPanel(
+                           imageOutput("wieczor")
+                         )
+                       )),
              tabPanel("Weekendy czy dni powszednie?",
                       sidebarLayout(
                         
@@ -94,10 +99,24 @@ ui <- fluidPage(
                         )
                       )
                       
-             )
-  )
+             ),
+             tabPanel("Miejsca turystyczne",
+                      sidebarLayout(
+                        sidebarPanel(),
+                        mainPanel(
+                          imageOutput("turysci")
+                        )
+                      )),
+             tabPanel("Rozmieszczenie szkół",
+                      sidebarLayout(
+                        sidebarPanel(),
+                        mainPanel(
+                          imageOutput("studenci")
+                        )
+                      ))
+  ))
   
-)
+
 
 
 server <- function(input, output) {
@@ -107,15 +126,8 @@ server <- function(input, output) {
   library(gridExtra)
   
   
-  output$favorite_routes <- renderPlot({
-   # Routes <- data.table(read_csv("przeliczone_dane/routes_to_plot.csv"))
-    #routes_to_plot2 <- Routes[1:100,ID := .I]
-    #routes_to_plot2 <- rbind(routes_to_plot2[,c("start latitude", "start longitude", "ID")],
-     #                        routes_to_plot2[,c("end latitude", "end longitude", "ID")], use.names=FALSE)
-    #ggplot(routes_to_plot2[,c("start latitude", "start longitude", "ID")], aes(x=`start longitude`, y=`start latitude`, group=ID)) +
-     # geom_point(size=2, color="black") +
-     # geom_line(color="red")
-  })
+  #output$favorite_routes <- renderPlot({
+  #})
   
   output$sub_vs_cust <- renderPlot({
     df <- read_csv(file = "przeliczone_dane/sub_vs_customers.csv")
@@ -124,7 +136,10 @@ server <- function(input, output) {
       scale_fill_manual(values=c("#6a040f", "#e85d04")) +
       theme(legend.position = "none") +
       xlab("Typ użytkownika") +
-      ggtitle("Liczba wypożyczeń z uwagi na typ użytkownika w skali roku")
+      ggtitle("Liczba wypożyczeń z uwagi na typ użytkownika w skali roku") +
+      theme(plot.title =element_text(size = 18, face  ="bold", margin = margin(10,0,10,0)), 
+            axis.text.x = element_text(size = 14, vjust = 0.5),
+            axis.title = element_text(size = 15, face = "bold", color = "#03071e"))
   
   })
   
@@ -173,59 +188,53 @@ server <- function(input, output) {
   })
   
   output$barPlotDlPodrozy <- renderPlot({
-    
     dane <- read.csv("ile_podrozy_okreslonej_dl.csv")
     plot_1 <- ggplot(data=dane,aes(x = `typ.podrozy`, y = N, fill = as.factor(N))) +
       geom_bar(stat="identity", width = 0.4) +
       scale_fill_manual(values=c("#05668d", "#028090", "#00a896", "#02c39a" )) +
       theme(legend.position = "none") +
       xlab("Typ podróży") +
-      ggtitle("Liczba podróży danej długości(czerwiec - wrzesień)")
+      ggtitle("Liczba podróży danej długości(czerwiec - wrzesień)")+
+      theme(plot.title =element_text(size = 16, face  ="bold", margin = margin(10,0,10,0)), 
+            axis.text.x = element_text(size = 14, vjust = 0.5),
+            axis.title = element_text(size = 14, face = "bold", color = "#03071e"))
     
     czas_wypozyczenia <- read_csv("czas_wypozyczenia.csv")
     plot_2 <- ggplot(data=czas_wypozyczenia, aes(x= reorder(`miesiac`, c(1:12)), y=`srednia_dl`, fill = srednia_dl)) +
       geom_bar(stat="identity")+
       scale_fill_continuous(type = "gradient", low = "#00004d",
-                            high = "#cc99ff",)+
+                            high = "#cc99ff")+
       scale_x_discrete(labels=c("STY", "LUT", "MAR", "KWI", "MAJ", "CZE", "LIP", "SIE", "WRZ", "PAZ", "LIS", "GRU"))+
       xlab("")+
       ylab("Średnia długość podróży [min]")+
       ggtitle("Średnia długość podróży w poszczególnych miesiącach")+
-      theme(legend.position = "none")
+      theme(legend.position = "none",
+            plot.title =element_text(size = 16, face  ="bold", margin = margin(10,0,10,0)), 
+            axis.text.x = element_text(size = 14, vjust = 0.5),
+            axis.title = element_text(size = 14, face = "bold", color = "#03071e"))
     
     grid.arrange(plot_1, plot_2, ncol=2)
   })
   
-  output$stacje <- renderPlot({
-    busyStations <- read_csv("busy_stations.csv")
-    ggplot(busyStations, aes(x=longitude, y=latitude, color=N)) + 
-      geom_point(alpha=0.3, size = 4) + 
-      scale_size(range=c(.1, 10)) +
-      scale_color_gradient(low = "pink", high = "purple") +
-      ggtitle("Zagęszczenie ruchu na stacjach") + 
-      theme(legend.title = element_text("Liczba wypożyczonych rowerów na stacji"))
-  })
+  output$stacje <- renderImage({
+    list(src = "plots/zageszczenie_ruchu_ogolnie.png")
+    }, 
+    deleteFile = FALSE
+  )
   
-  output$rano <- renderPlot({
-    morning <- read_csv("end_stations_morning.csv")
-    ggplot(morning, aes(x=longitude, y=latitude, color=N)) + 
-      geom_point(alpha=0.4, size = 4) + 
-      scale_size(range=c(.1, 10)) +
-      scale_color_gradient(low="orange", high="blue") +
-      ggtitle("Stacje docelowe rano (7 - 10, pon - pt)") +
-      theme(legend.title = element_text("Liczba zwrotów rowerów na stacji"))
+  output$rano <- renderImage({
     
-  })
-  output$wieczor <- renderPlot({
-    evening <- read_csv("end_stations_evening.csv")
-    ggplot(evening, aes(x=longitude, y=latitude, color=N)) + 
-      geom_point(alpha=0.3, size = 4) + 
-      scale_size(range=c(.1, 10)) +
-      scale_color_gradient(low="orange", high="blue") +
-      ggtitle("Stacje docelowe wieczorem (16 - 19, pon - pt)") +
-      theme(legend.title = element_text("Liczba zwrotów rowerów na stacji"))
-    
-  })
+    list(src = "plots/zageszczenie_ruchu_rano.png")
+  }, 
+    deleteFile = FALSE
+  )
+  
+  output$wieczor <- renderImage({
+    list(src = "plots/zageszczenie_ruchu_wieczor.png")
+  }, 
+  deleteFile = FALSE
+  )
+  
   output$Wypozyczone_rowery <- renderPlot({
     ruch <- read_csv("ruch.csv")
     ggplot(ruch, aes(x = reorder(`miesiace`, c(1:12)), y = liczba_rowerow, fill = liczba_rowerow))+
@@ -264,7 +273,8 @@ server <- function(input, output) {
                 color="white", size=3.5)+
       scale_fill_manual(values = paleta, name = "Płeć", labels = c(input$plec) )+
       ggtitle("Chrarakterystyka użytkowników")+
-      ylab("Liczba osób")
+      ylab("Liczba osób") + 
+      theme(plot.title =element_text(size = 18, face  ="bold", margin = margin(10,0,10,0)))
   })
   
   #output$Srednia_dl_podrozy <- renderPlot({
@@ -278,7 +288,11 @@ server <- function(input, output) {
       ggtitle("Średnia ilość wypożyczeń w ciągu dnia w kolejnych tygodniach")+
       scale_colour_brewer(palette = "Set1", name = "", labels = c("Dni powszednie", "Weekendy") )+
       ylab("Ilość wypożyczeń [szt]")+
-      xlab("")
+      xlab("")+
+      theme(plot.title =element_text(size = 16, face  ="bold", margin = margin(10,0,10,0)), 
+            axis.text = element_text(size = 14, vjust = 0.5),
+            axis.title = element_text(size = 14, face = "bold", color = "#03071e"))
+      
   })
   output$ruch_godzinowo <- renderPlot({
     weekend_godzinowo <- read_csv("Weekend_godzinowo.csv")
@@ -310,7 +324,10 @@ server <- function(input, output) {
       scale_fill_continuous(low = "#001782", high = "#989898")+
       #scale_fill_manual(name = "", labels = c("Dni powszednie", "Weekendy"))+
       ylab("Ilość wypożyczeń [szt]")+
-      xlab("")
+      xlab("")+
+      theme(plot.title =element_text(size = 16, face  ="bold", margin = margin(10,0,10,0)), 
+            axis.text.x = element_text(size = 14, vjust = 0.5),
+            axis.title = element_text(size = 14, face = "bold", color = "#03071e"))
     
     
     plot2 <- ggplot(test, aes(x=godzina , y= weekend, fill = weekend)) +
@@ -319,14 +336,25 @@ server <- function(input, output) {
       scale_fill_continuous(low = "#800000", high = "#009c0d")+
       #scale_fill_manual(name = "", labels = c("Dni powszednie", "Weekendy"))+
       ylab("Ilość wypożyczeń [szt]")+
-      xlab("")
+      xlab("")+
+      theme(plot.title =element_text(size = 16, face  ="bold", margin = margin(10,0,10,0)), 
+            axis.text.x = element_text(size = 14, vjust = 0.5),
+            axis.title = element_text(size = 14, face = "bold", color = "#03071e"))
+
     
     grid.arrange(plot1, plot2, ncol=2)
     
-    
-    
   })
   
+  output$turysci <- renderImage({
+    list(src = "plots/turysci_plot.png")
+  }, 
+  deleteFile = FALSE)
+  
+  output$studenci <- renderImage({
+    list(src = "plots/students_plot.png")
+  }, 
+  deleteFile = FALSE)
   
 }
 

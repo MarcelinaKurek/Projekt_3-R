@@ -136,6 +136,7 @@ end_stations_indices_sorted_byN$`end station id` <- as.character(end_stations_in
 end_stations <- merge(end_stations_indices_sorted_byN,stations, by.x = "end station id", by.y = "id",all.x = TRUE)
 
 fwrite(end_stations, file="end_stations_evening.csv")
+
 ## ---- gdzie jeżdzą turyści ----
 tourists <- june[usertype=="Customer", c("start station latitude", "start station longitude", 
                                          "end station latitude", "end station longitude")]
@@ -144,30 +145,26 @@ for ( i in 7:9) {
                                           c("start station latitude", "start station longitude", 
                                             "end station latitude", "end station longitude")], use.names = FALSE)
 }
+fwrite(tourists[, c("end station latitude", "end station longitude")], "polygon_tourists_map.csv")
 tourists_places <- tourists[,.N, by = c("end station latitude", "end station longitude")]
 tourists_places <- tourists_places[order(by = N, decreasing = TRUE)]
 fwrite(tourists_places, "tourists_places.csv")
+
+
 ## ---- TRASY osoby 7 - 18 lat - uczniowie pon - pt ----
 students_months <- april
 students_months <- rbind(students_months, may, september, use.names = FALSE)
 students_routes <- students_months[(2019 - `birth year`) <= 18 & (2019 - `birth year`) >= 7 &
-                         Weekday%in% c("poniedziałek", "wtorek", "środa", "czwartek", "piątek"),
-                       c("start station latitude", "start station longitude", "end station latitude", "end station longitude")]
-students_routes_grouped <- students_routes[, .N, by = list(`start station longitude`, `start station latitude`, 
-                                                           `end station longitude`, `end station latitude`)]
+                         Weekday%in% c("poniedziałek", "wtorek", "środa", "czwartek", "piątek") & 
+                         hour(stoptime) >= 7 & hour(stoptime) <= 10,
+                       c("end station latitude", "end station longitude")]
+students_routes_grouped <- students_routes[, .N, by = list(`end station longitude`, `end station latitude`)]
 students_routes_grouped <- students_routes_grouped[(order(by = N, decreasing = TRUE))]
 fwrite(students_routes_grouped, "student_routes.csv")
 ## ---- najczęściej wybierana trasa  ogólnie ----
-routes <- data.table(january)
+routes <- data.table(june)
+routes <- rbind(routes, july, august, september, use.names = FALSE)
 routes <- routes[, .N , by = list(`start station id`, `end station id`)]
-routes <- routes[, month:= 1]
-for(i in 2:12) {
-  temporary <- months[[i]][, .N , by = list(`start station id`, `end station id`)]
-  temporary$`start station id` <- as.double(temporary$`start station id`)
-  temporary$`end station id` <- as.double(temporary$`end station id`) 
-  temporary <- temporary[, month := i]
-  routes <- rbind(routes, temporary, use.names=FALSE)
-}
 stations$id <- as.double(stations$id)
 
 # szerokość i dł. geog. stacji początkowej
@@ -181,7 +178,8 @@ routes <- merge.data.table(routes, stations, by.x = "end station id", by.y = "id
 newnames <- c("end latitude", "end longitude")
 setnames(routes, old = oldnames, new=newnames, skip_absent = TRUE)
 
-fwrite(routes[, c("N" ,"start latitude", "start longitude", "end latitude", "end longitude", "month")], "routes_to_plot.csv")
+routes <- routes[order(N, decreasing = TRUE)]
+fwrite(routes[1:100, ], "routes_to_plot.csv")
 
 ## ---- obserwacje ruchu na podstawie godzin( w których godzinach są krótkie trasy a w których długie) ----
 hours_observations <- data.table(june[,c("starttime", "tripduration")])
@@ -218,42 +216,6 @@ tripduration_over_hours <- data.table(hour = c(1:24), `0-15min` = duration_0_15m
                                       `30-45min` = duration_30_45min_grouped, `over 45min`=duration_over_45min_grouped)
 fwrite(tripduration_over_hours, file = "tripduration_over_hours.csv")
 
-## ---- Sprawdzenie czy ludzie jeżdżą w parach ----
-group_trips <-june
-group_trips <- rbind(group_trips, july, august, use.names = FALSE)
-group_trips <- group_trips[order(starttime),list(`starttime`,`start station id`, `end station id`)]
-result_tab <- data.table(NULL)
-len <- dim(group_trips)[1]
-howmany <- 2
-for (i in 1:(len-1)) {
-  iter <- 1
-  for (j in (i+1):len) {
-    if (units.difftime(ymd_hms(group_trips$starttime[j]) - ymd_hms(group_trips$starttime[i])) == "secs") {
-      minutes <- 0
-    }
-    else {
-      minutes <- as.numeric(ymd_hms(group_trips$starttime[j]) - ymd_hms(group_trips$starttime[i]))
-    }
-    
-    if (minutes < 4) {
-      if (group_trips$`start station id`[i] == group_trips$`start station id`[j] & group_trips$`end station id`[i] == group_trips$`end station id`[j]){
-        if (iter == 1) {
-          row <- cbind(group_trips[i], howmany)
-          result_tab <- rbind(result_tab, row)
-        }
-        else {
-          result_tab$howmany[dim(result_tab)[1]] <- result_tab$howmany[dim(result_tab)[1]] + 1
-        }
-        iter <- iter + 1
-      }
-    }
-    else if(minutes >= 4){
-        break;
-      }
-    }
-  }
-
-fwrite(result_tab, "group_trips.csv")
 
 ## ---- Najdłużssze wypożyczenia ----
 # 
@@ -302,4 +264,16 @@ Weekend_godzinowo <- Weekend_godzinowo[, .(godzina, month, weekend, liczba_tras,
 Weekend_godzinowo <- distinct(Weekend_godzinowo)
 fwrite(Weekend_godzinowo, "Weekend_godzinowo.csv")
 
+<<<<<<< HEAD
 
+=======
+##Porównanie weekendu godzinowo bez uwzględniania wieku i typu subskrypcji (ot prostsza wersja)
+d1 <- as.Date("2018-12-31")
+Weekend_godzinowo <- wszystko[, .("godzina" = hour(starttime), "data" = as.Date(starttime), weekend = (Weekday == "sobota" | Weekday == "niedziela" ))]
+Weekend_godzinowo <- Weekend_godzinowo[, .(godzina, data = as.integer(ceiling((data - d1)/7)) , "weekend" = as.character(weekend), "liczba_tras" = .N), by = c("godzina", "weekend", "data") ][order(godzina)]
+Weekend_godzinowo[, 1:3] <- NULL
+Weekend_godzinowo <- Weekend_godzinowo[, .(godzina, data = d1 + 7*data, weekend, liczba_tras)]
+Weekend_godzinowo <- distinct(Weekend_godzinowo)
+
+Tourists <- data.table(read.csv("przeliczone_dane/tourists_places.csv"))
+>>>>>>> 797f680e68d7cac27193ce6244c0c53ee1e106a4

@@ -26,6 +26,8 @@ Biorąc pod uwagę to, że Nowy Jork odwiedziło w roku 2019 ponad 65 mln turyst
 Podsumowując głównymi użytkownikami rowerów miejskich są mieszkańcy Nowego Jorku.
 Zauważmy, że w skrukturze wiekowej użytkownikóW zdecydowanie przeważają mężczyźni. Najliczniejsza grupa użytkowników to osoby urodzone w latach 1985 - 1990. Z kolei wśród turystów głównymi użytkownikami są osoby urodzone po 1990r. Szczególnym rokiem był rok 1969, w którym odnotowano największą ilość użytkownikóW w większości z brakiem danych na temat płci.
 
+
+
 ## Długość podróży
 Obserwujemy, że długość podróży jest uwarunkowana porą dnia.
 Ludzie używają rowerów do bardzo krótkich przejażdżek głównie w godzinach 9-10 oraz 18-19.
@@ -42,3 +44,19 @@ Porównując miesiące wakacjne i pozostałe, można zaobserwować subtelne ró�
 Biorąc pod uwagę podróże turystów i mieszkańców, w podróżach turystów różnica między ilością podróży w godzinach szczytu i poza nimi jest mniejsza.
 Studenci chętniej wypożyczają rowwery w godzinach nocnych, przykładowo w weekendy odnotowano więcej wypożyczeń o północy niż o 7 rano.
 
+## Zagęszczenie ruchu na stacjach
+Stacje rowerowe znajdują się na Manhattanie oraz w Brooklynie
+Njbardziej używane stacje znajdują się w fioletowym obszarze.
+Rano jak i wieczorem bardzo oblegany jest Grand Central Terminal
+
+
+## Turyści
+
+Turyści chętnie oglądają World Trace Center.
+Dużym powodzeniem cieszy się też Chelsea Market
+Często jeżdzą do Cenral Parku.
+
+## Szkoły
+
+Niewiele uczniów jeździ do szkoły rowerem.
+Widzimy że szkoły z większą liczbą uczniów znajdują się raczej w centrum.
