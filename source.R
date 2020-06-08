@@ -235,17 +235,17 @@ wypozyczenia <- wszystko[`birth year` > 1950, .(`birth year`, gender, usertype)]
 
 dane_do_wykresu <- wypozyczenia[, .("rok urodzenia" =`birth year`, `liczba osob` = .N, usertype), by = list(`birth year`, gender, usertype)][order(`rok urodzenia`)]
 dane_do_wykresu <- dane_do_wykresu[, c(2, 4, 5, 6)]
-fwrite(dane_do_wykresu, "age_and_gender.csv")
+fwrite(dane_do_wykresu, "Age_and_gender.csv")
 
 
 ##Sredni czas wypożyczenia roweru w miesiącu
-czas_wypozyczenia <- wszystko[, .(month, tripduration, srednia = mean(tripduration)/60 ), by = month]
+czas_wypozyczenia <- whole_data[, .(month, tripduration, srednia = mean(tripduration)/60 ), by = month]
 czas_wypozyczenia <- distinct(czas_wypozyczenia[, .("miesiac" = month, "srednia_dl" = srednia)])
 fwrite(czas_wypozyczenia, "czas_wypozyczenia.csv")
 
 
 #Porównanie weekendu i dnia powszedniego na przestrzeni roku
-Weekend_vs_zwykly <- wszystko[, .("data" = as.Date(starttime), month, weekend = (Weekday == "sobota" | Weekday == "niedziela" ))]
+Weekend_vs_zwykly <- whole_data[, .("data" = as.Date(starttime), month, weekend = (Weekday == "sobota" | Weekday == "niedziela" ))]
 Weekend_vs_zwykly <- Weekend_vs_zwykly[, .(data, month, "weekend" = as.character(weekend), "tydzien" = as.integer(ceiling((data - n1)/7)))][order(data)]
 Weekend_vs_zwykly <- Weekend_vs_zwykly[, .(data, month, tydzien, "liczba_tras"= .N) , by = c("tydzien", "weekend")] #mamy liczbę tras w każdym dniu tygodnia
 Weekend_vs_zwykly[, c(1,4)] <- NULL
@@ -257,23 +257,14 @@ fwrite(Weekend_vs_zwykly, "Weekend_vs_zwykly.csv")
 
 
 ##Porównanie godzin wypożyczeń dla weekendów i dni powszednich (z uwzględnieniem subskrypcji i częściowym uwzględnieniem wieku)
-Weekend_godzinowo <- wszystko[, .("godzina" = hour(starttime), "month" = month(as.Date(starttime)), weekend = (Weekday == "sobota" | Weekday == "niedziela" ), usertype, student= (`birth year` >= 1993))]
+Weekend_godzinowo <- whole_data[, .("godzina" = hour(starttime), "month" = month(as.Date(starttime)), weekend = (Weekday == "sobota" | Weekday == "niedziela" ), usertype, student= (`birth year` >= 1993))]
 Weekend_godzinowo <- Weekend_godzinowo[, .(godzina, month, "weekend" = as.character(weekend), "liczba_tras" = .N, usertype, student = as.character(student)), by = c("godzina", "weekend", "month", "usertype", "student") ][order(godzina)]
 Weekend_godzinowo[, 1:5] <- NULL
 Weekend_godzinowo <- Weekend_godzinowo[, .(godzina, month, weekend, liczba_tras, usertype, student)]
 Weekend_godzinowo <- distinct(Weekend_godzinowo)
 fwrite(Weekend_godzinowo, "Weekend_godzinowo.csv")
 
-<<<<<<< HEAD
 
-=======
-##Porównanie weekendu godzinowo bez uwzględniania wieku i typu subskrypcji (ot prostsza wersja)
-d1 <- as.Date("2018-12-31")
-Weekend_godzinowo <- wszystko[, .("godzina" = hour(starttime), "data" = as.Date(starttime), weekend = (Weekday == "sobota" | Weekday == "niedziela" ))]
-Weekend_godzinowo <- Weekend_godzinowo[, .(godzina, data = as.integer(ceiling((data - d1)/7)) , "weekend" = as.character(weekend), "liczba_tras" = .N), by = c("godzina", "weekend", "data") ][order(godzina)]
-Weekend_godzinowo[, 1:3] <- NULL
-Weekend_godzinowo <- Weekend_godzinowo[, .(godzina, data = d1 + 7*data, weekend, liczba_tras)]
-Weekend_godzinowo <- distinct(Weekend_godzinowo)
 
 Tourists <- data.table(read.csv("przeliczone_dane/tourists_places.csv"))
->>>>>>> 797f680e68d7cac27193ce6244c0c53ee1e106a4
+
