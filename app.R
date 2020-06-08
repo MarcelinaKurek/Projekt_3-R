@@ -48,7 +48,6 @@ ui <- fluidPage(
                         mainPanel(
                           plotOutput("dlPodrozy", width = "100%"),
                           plotOutput("barPlotDlPodrozy")
-                          #plotOutput("Srednia_dl_podrozy")
                         )
                       )),
              tabPanel("Zagęszczenie ruchu na stacjach",

@@ -17,8 +17,21 @@ Z tego wynika, że średnio na jednego mieszkańca Nowego Jorku przypadają tylk
 Wszystkich stacji jest około 1000.
 Najwięcej wypożyczeń było w sierpniu i wrześniu, ok 50 000 łącznie w każdym z tych miesięcy. Najmniej wypożyczeń przypadło na miesiące zimowe - grudzień, styczeń oraz luty - ok 20 000. Średnia liczba wypożyczanych rowerów w miesiącu wyniosła 33 446 rowerów.
 
-## Najczęstsze trasy
-Nowojorczycy najczęściej obierają trasy
+## Najczęstsze trasy 
+Najczęściej nowojorczycy wypożyczają rowery w okolicach parków.
+Większosć wypożyczeń jest przy południowym wejściu do Central Parku lub na Wyspie Gubernatora, która cała jest parkiem.
+
+Central Park S & 6 Ave - Central Park S & 6 Ave
+Soissons Landing - Soissons Landing
+Yankee Ferry Terminal - Soissons Landing
+Soissons Landing - Picnic Point
+Soissons Landing - Yankee Ferry Terminal
+Picnic Point - Soissons Landing
+Yankee Ferry Terminal - Yankee Ferry Terminal
+E 7 St & Avenue A - Cooper Square & Astor Pl
+12 Ave & W 40 St - West St & Chambers St
+West Drive & Prospect Park West - West Drive & Prospect Park West
+Central Park S & 6 Ave - 5 Ave & E 88 St
 
 ## Customers vs subscribers
 Zakładając, że większość customers to turyści. Możemy powiedzieć, że turyści stanowią 14% wszystkich wypożyczeń.
@@ -59,4 +72,4 @@ Często jeżdzą do Cenral Parku.
 ## Szkoły
 
 Niewiele uczniów jeździ do szkoły rowerem.
-Widzimy że szkoły z większą liczbą uczniów znajdują się raczej w centrum.
+Widzimy, że szkoły z większą liczbą uczniów znajdują się raczej w centrum.

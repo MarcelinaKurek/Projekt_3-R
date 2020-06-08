@@ -1,7 +1,28 @@
 library(ggplot2)
 library(data.table)
 library(ggmap)
+library(leaflet)
+library(magrittr)
+
+
 ## generowanie wykresów
+
+## Najczęstsze trasy
+routes100 <- read.csv("przeliczone_dane/routes_to_plot_final.csv")
+routes100 <- routes100[1:10,]
+dt <- data.table(group = c("start", "end"),
+                       startLat = routes100$start.latitude,
+                      startLon = routes100$start.longitude,
+                      endLat = routes100$end.latitude,
+                      endLon = routes100$end.longitude,
+                 stringsAsFactors = FALSE
+                 )
+dt_ready <- data.table(group =  c("start", "end"),
+                       lat = c(dt$startLat, dt$endLat),
+                       long = c(dt$startLon, dt$endLon))
+leaflet()%>%
+  addTiles() %>%
+  addPolylines(data = dt_ready, lng = ~long, lat = ~lat, group = ~group)
 
 ## Wczytanie mapy ----
 register_google(key = "API_KEY", write = TRUE)
